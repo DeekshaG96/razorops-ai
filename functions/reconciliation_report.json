@@ -1,0 +1,106 @@
+{
+  "metrics": {
+    "total_records_processed": 60,
+    "successful_matches": 44,
+    "exceptions_flagged": 16,
+    "match_rate_percentage": 73.33
+  },
+  "exception_list": [
+    {
+      "transaction_id": "pay_dd1ace03",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_7b3df999",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_b2ee1061",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_36d368aa",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_89814001",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_8b12c6d0",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_82bf7b78",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_9bf35bcd",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_d8ac814e",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_653e49e2",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_460d0d66",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_9f446d69",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_47a389fe",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_1d2fae31",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_de3eb52f",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    },
+    {
+      "transaction_id": "pay_f18a9359",
+      "exception_type": "AI_PROCESSING_ERROR",
+      "root_cause": "LLM unavailable or timed out",
+      "recommended_action": "Manual review required"
+    }
+  ]
+}

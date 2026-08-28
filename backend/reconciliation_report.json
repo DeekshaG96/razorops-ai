@@ -1,0 +1,46 @@
+{
+  "metrics": {
+    "total_records_processed": 60,
+    "successful_matches": 36,
+    "exceptions_flagged": 24,
+    "match_rate_percentage": 60.0
+  },
+  "exception_list": [
+    {
+      "transaction_id": "pay_a1b2c3d4",
+      "exception_type": "MDR_VARIANCE",
+      "root_cause": "Razorpay charged 2.0% MDR but ERP expected 1.8%. Delta of ₹4.12 on captured amount ₹2,060.00.",
+      "recommended_action": "Update ERP MDR configuration from 1.8% to 2.0% for this MID."
+    },
+    {
+      "transaction_id": "pay_e5f6a7b8",
+      "exception_type": "MDR_VARIANCE",
+      "root_cause": "Fee variance: bank deducted ₹89.40 (2.0%) vs ERP expectation of ₹80.46 (1.8%) on ₹4,470.00.",
+      "recommended_action": "Reconcile MDR rate with Razorpay pricing sheet; update ERP template."
+    },
+    {
+      "transaction_id": "pay_c9d0e1f2",
+      "exception_type": "TIMING_CUTOFF",
+      "root_cause": "Transaction captured at 23:55 IST crossed the T+1 settlement cutoff. Bank settled at T+2 instead.",
+      "recommended_action": "No financial loss. Flag as timing delay; update SLA expectation for late-night captures."
+    },
+    {
+      "transaction_id": "pay_f3a4b5c6",
+      "exception_type": "TIMING_CUTOFF",
+      "root_cause": "Late capture (00:03 IST) pushed settlement to next business day cycle. Amount correct but date mismatched.",
+      "recommended_action": "Informational only — cash received within acceptable T+2 window."
+    },
+    {
+      "transaction_id": "pay_d7e8f9a0",
+      "exception_type": "PARTIAL_REFUND",
+      "root_cause": "50% refund of ₹1,823.50 processed post-capture. Net settlement is capture minus MDR minus refund.",
+      "recommended_action": "Link refund ID to this transaction in ERP; close the loop."
+    },
+    {
+      "transaction_id": "pay_b1c2d3e4",
+      "exception_type": "PARTIAL_REFUND",
+      "root_cause": "Partial refund of ₹2,104.00 not reflected in ERP expected_settlement. Bank correctly netted.",
+      "recommended_action": "ERP needs refund journal entry; auto-close once refund_id is mapped."
+    }
+  ]
+}

@@ -16,16 +16,39 @@ import {
   Terminal as TerminalIcon, 
   CornerDownRight, 
   Download,
-  AlertCircle
+  AlertCircle,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Database
 } from 'lucide-react';
 import { generateSyntheticData } from './data/syntheticGenerator';
 import { controllerAgent } from './agents/controllerAgent';
 
+// Firebase imports
+import { auth, db } from './firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  onAuthStateChanged, 
+  signOut 
+} from 'firebase/auth';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+
 export default function App() {
+  // Auth state
+  const [user, setUser] = useState(null);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // App running states
   const [isRunning, setIsRunning] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [syntheticData, setSyntheticData] = useState(null);
-  const [reconData, setReconData] = useState(null);
+  const [firestoreSynced, setFirestoreSynced] = useState(false);
+  const [dbData, setDbData] = useState(null);
   
   // Terminal logs streaming state
   const [simulatedLogs, setSimulatedLogs] = useState([]);
@@ -35,7 +58,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([
     {
       sender: 'bot',
-      text: 'Welcome, Finance Auditor. I am the Settlement Q&A Agent. Run the multi-agent reconciliation to begin auditing, then ask me about transactions, disputes, fee variances, cutoff delays, or cash projections.',
+      text: 'Welcome, Finance Auditor. I am the Settlement Q&A Agent. I can analyze the live exception logs stored in Firestore and answer your audit queries in real-time.',
       time: new Date().toLocaleTimeString()
     }
   ]);
@@ -62,66 +85,139 @@ export default function App() {
     }
   }, [chatMessages]);
 
-  // Run the multi-agent system simulation
+  // Auth State Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setAuthError('');
+        // Initialize Firestore Real-time listener
+        subscribeToFirestore();
+      } else {
+        setDbData(null);
+        setIsCompleted(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Listen to Firestore real-time updates
+  const subscribeToFirestore = () => {
+    const docRef = doc(db, 'reconciliation_reports', 'latest_batch');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setDbData(data);
+        setIsCompleted(true);
+        setFirestoreSynced(true);
+      } else {
+        setDbData(null);
+        setIsCompleted(false);
+        setFirestoreSynced(false);
+      }
+    }, (error) => {
+      console.error("Firestore sync error:", error);
+      setFirestoreSynced(false);
+    });
+    return unsubscribe;
+  };
+
+  // Auth Sign-In / Sign-Up handlers
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    if (!authEmail.trim() || !authPassword.trim()) {
+      setAuthError('Email and password are required.');
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      if (authMode === 'login') {
+        await signInWithEmailAndPassword(auth, authEmail, authPassword);
+      } else {
+        await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+      }
+    } catch (err) {
+      console.error(err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setAuthError('Invalid email or password credentials.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setAuthError('Email is already registered.');
+      } else if (err.code === 'auth/weak-password') {
+        setAuthError('Password should be at least 6 characters.');
+      } else {
+        setAuthError(err.message.replace('Firebase:', ''));
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Run the multi-agent system simulation and save to Firestore
   const runSimulation = () => {
     setIsRunning(true);
-    setIsCompleted(false);
     setSimulatedLogs([]);
 
     // 1. Generate new synthetic data batch
     const rawData = generateSyntheticData();
-    setSyntheticData(rawData);
 
     // 2. Run Controller Agent (runs the whole multi-agent loop)
     const result = controllerAgent.run(rawData, 500000); // 5L starting balance
 
     // 3. Stream logs into the terminal window to simulate real-time agent execution
     let currentLogIndex = 0;
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       if (currentLogIndex < result.logs.length) {
         const logToAdd = result.logs[currentLogIndex];
         setSimulatedLogs(prev => [...prev, logToAdd]);
         currentLogIndex++;
       } else {
         clearInterval(interval);
-        setReconData(result);
-        setIsRunning(false);
-        setIsCompleted(true);
         
-        // Add follow-up bot message when reconciliation completes
-        setChatMessages(prev => [
-          ...prev,
-          {
-            sender: 'bot',
-            text: `Reconciliation audit complete. Certified Match Rate: ${result.metrics.matchRate}%. Found ${result.exceptions.length} exceptions. You can now run detailed queries. Try clicking the quick actions below!`,
-            time: new Date().toLocaleTimeString(),
-            isInteractive: true
-          }
-        ]);
+        // 4. Save the finalized reconciliation result to Cloud Firestore
+        try {
+          const docRef = doc(db, 'reconciliation_reports', 'latest_batch');
+          // Standardize JSON format for Firestore writes
+          const firestorePayload = JSON.parse(JSON.stringify(result));
+          await setDoc(docRef, firestorePayload);
+          
+          setIsRunning(false);
+          
+          // Add follow-up bot message when reconciliation completes
+          setChatMessages(prev => [
+            ...prev,
+            {
+              sender: 'bot',
+              text: `Reconciliation audit complete and saved to Firestore! Certified Match Rate: ${result.metrics.matchRate}%. Found ${result.exceptions.length} exceptions. Live database listener is active. Try querying exceptions below!`,
+              time: new Date().toLocaleTimeString(),
+              isInteractive: true
+            }
+          ]);
+        } catch (err) {
+          console.error("Failed to write to Firestore:", err);
+          setIsRunning(false);
+          setChatMessages(prev => [
+            ...prev,
+            {
+              sender: 'bot',
+              text: `Reconciliation finished locally but failed to upload to Firestore. Error: ${err.message}. Please check database rules.`,
+              time: new Date().toLocaleTimeString()
+            }
+          ]);
+        }
       }
-    }, 80); // Speed of streaming logs
+    }, 40); // Increased speed for Firestore flow
   };
 
-  // Reset dashboard state
-  const resetSimulation = () => {
-    setIsRunning(false);
-    setIsCompleted(false);
-    setSimulatedLogs([]);
-    setReconData(null);
-    setSyntheticData(null);
-    setChatMessages([
-      {
-        sender: 'bot',
-        text: 'Welcome, Finance Auditor. I am the Settlement Q&A Agent. Run the multi-agent reconciliation to begin auditing, then ask me about transactions, disputes, fee variances, cutoff delays, or cash projections.',
-        time: new Date().toLocaleTimeString()
-      }
-    ]);
-    setSearchQuery('');
-    setStatusFilter('all');
-    setHoveredPoint(null);
-  };
-
-  // Handle Q&A conversational queries
+  // Handle Q&A conversational queries against Firestore live exceptions
   const handleSendMessage = (textToSend) => {
     const query = textToSend || chatInput;
     if (!query.trim()) return;
@@ -138,11 +234,11 @@ export default function App() {
     setTimeout(() => {
       let botResponse = '';
 
-      if (!isCompleted || !reconData) {
-        botResponse = 'Please trigger the "Run Reconciliation Agent" simulation in the header first, so I can analyze the ledger data and audit logs.';
+      if (!dbData) {
+        botResponse = 'There are no active exceptions loaded from Firestore. Please click "Run Reconciliation Agent" to run the pipeline and seed the database first.';
       } else {
         const q = query.toLowerCase();
-        const { metrics, reconciliationResults, exceptions, disputeAnalysis, projections } = reconData;
+        const { metrics, reconciliationResults, exceptions, disputeAnalysis, projections } = dbData;
 
         if (q.includes('utr')) {
           // Look up specific UTR
@@ -156,7 +252,7 @@ export default function App() {
 
             if (foundRecord) {
               const settle = foundRecord.settlements.find(s => s.utr.toUpperCase() === searchedUtr);
-              botResponse = `🔍 **UTR Mapped Successfully**:\n
+              botResponse = `🔍 **UTR Mapped Successfully (from Firestore)**:\n
 - **UTR**: ${settle.utr}
 - **Capture ID**: ${foundRecord.payment.id}
 - **Gross Settled**: ₹${settle.gross_amount.toLocaleString()}
@@ -166,14 +262,14 @@ export default function App() {
 - **Status**: ${foundRecord.status}
 - **Settlement Date**: ${settle.settle_date}`;
             } else {
-              botResponse = `❌ UTR code "${searchedUtr}" not found in current settlement batch. Please verify the code.`;
+              botResponse = `❌ UTR code "${searchedUtr}" not found in current Firestore database snapshot.`;
             }
           } else {
-            botResponse = 'Please provide a specific UTR code (e.g., "UTR_90001" or "UTR_var_90041") to audit its transaction mappings.';
+            botResponse = 'Please provide a specific UTR code (e.g., "UTR_90001") to audit its transaction mappings.';
           }
         } else if (q.includes('dispute') || q.includes('chargeback') || q.includes('reserve') || q.includes('hold')) {
           const highRisk = disputeAnalysis.riskSignals.filter(s => s.severity === 'high');
-          botResponse = `🛡️ **Dispute Agent Risk Assessment**:\n
+          botResponse = `🛡️ **Dispute Agent Risk Assessment (Firestore Live)**:\n
 - **Active Chargeback Claims**: ${disputeAnalysis.totalDisputesCount} claims logged.
 - **Disputed Cash Volume**: ₹${disputeAnalysis.totalDisputedAmount.toLocaleString()}
 - **Nodal Reserve Holds**: ₹${disputeAnalysis.reserveHoldAmount.toLocaleString()} locked.
@@ -183,33 +279,31 @@ export default function App() {
             : `✅ No high-risk fraudulent clusters detected in this batch.`);
         } else if (q.includes('variance') || q.includes('fee') || q.includes('mdr')) {
           const variances = reconciliationResults.filter(r => r.status === 'MDR Fee Variance Detected');
-          botResponse = `📊 **MDR Fee Variance Report**:\n
-The Reconciliation Agent flagged **${variances.length} transactions** where charged fees exceeded the standard 2% merchant profile:\n\n` +
-          variances.map(v => `- **Payment ${v.payment.id}** (${v.payment.method}): Charged ₹${v.settlements[0].fee_deducted} vs expected ₹${v.payment.expected_fee} (International/Premium Card surcharge). Variance: ₹${v.variance.toFixed(2)}.`).join('\n') +
+          botResponse = `📊 **MDR Fee Variance Report (Firestore Live)**:\n
+Firestore is currently tracking **${variances.length} transactions** where charged fees exceeded the standard 2% merchant profile:\n\n` +
+          variances.map(v => `- **Payment ${v.payment.id}** (${v.payment.method}): Charged ₹${v.settlements[0].fee_deducted} vs expected ₹${v.payment.expected_fee} (Variance: ₹${v.variance.toFixed(2)}).`).join('\n') +
           `\n\n*Suggested Action: Pass back surcharges to global customers or renegotiate international gateway rates.*`;
         } else if (q.includes('refund') || q.includes('partial')) {
           const refunds = reconciliationResults.filter(r => r.status.includes('Refund'));
-          botResponse = `🔄 **Partial Refund Auditing**:\n
+          botResponse = `🔄 **Partial Refund Auditing (Firestore Live)**:\n
 We resolved **${refunds.length} partial refund cases** where the nodal bank settled less than the original payment value:\n\n` +
           refunds.map(r => `- **Payment ${r.payment.id}**: Captured ₹${r.payment.amount}, Refunded ₹${r.payment.refunded_amount}. Net settled bank gross: ₹${r.settlements[0].gross_amount} (Matched via credit-note net calculation).`).join('\n');
         } else if (q.includes('cutoff') || q.includes('timing') || q.includes('sunday')) {
-          const cutoffs = reconciliationResults.filter(r => r.status.includes('Timing Cutoff'));
-          botResponse = `⏰ **Timing Cutoff Audit**:\n
-We resolved **${cutoffs.length} cutoff-lag cases**:\n\n` +
-          `Transactions captured late Sunday night (post 23:30 IST / 18:00 UTC) missed the nodal bank batch closure. They were automatically pushed to Monday's processing queue, leading to settlement on Wednesday (T+3) rather than Tuesday (T+2). All records successfully reconciled against deferred banking cycles.`;
+          botResponse = `⏰ **Timing Cutoff Audit (Firestore Live)**:\n
+We resolved timing lags for transactions captured late Sunday night (post 23:30 IST / 18:00 UTC) which missed the nodal bank batch closure. They were automatically pushed to Monday's processing queue, leading to settlement on Wednesday (T+3) rather than Tuesday (T+2). All records successfully reconciled against deferred banking cycles.`;
         } else if (q.includes('exception') || q.includes('unresolved') || q.includes('mismatch')) {
-          botResponse = `⚠️ **Honest Exception List (Human Review Required)**:\n
+          botResponse = `⚠️ **Honest Exception List (Human Review Queue - Firestore)**:\n
 These **${exceptions.length} items** could not be auto-resolved by agent rules:\n\n` +
           exceptions.map((e, index) => `${index + 1}. **${e.type}** (Payment: ${e.paymentId}):
    - **Details**: ${e.description}
    - **Impact Value**: ₹${e.amount.toLocaleString()}
    - **Recommended Resolution**: ${e.resolution}`).join('\n\n');
         } else if (q.includes('forecast') || q.includes('liquidity') || q.includes('cashflow') || q.includes('7 days')) {
-          botResponse = `📈 **Forward Cashflow Projections** (7-Day Horizon):\n
+          botResponse = `📈 **Forward Cashflow Projections (Firestore)** (7-Day Horizon):\n
 - **Current Available Cash**: ₹${(metrics.startingBalance - metrics.reserveHoldAmount).toLocaleString()} (Reserve held: ₹${metrics.reserveHoldAmount.toLocaleString()})
 - **Projected Credits (Next 7 Days)**: ₹${projections.reduce((sum, p) => sum + p.projectedCreditNet, 0).toLocaleString()} net.
 - **Estimated Cash Balance**: ₹${metrics.endingBalance.toLocaleString()} by end of cycle.
-- **Bank Holiday Lag**: No settlements cleared on Saturdays/Sundays due to nodal clearing closures. Large accumulation credit scheduled for Tuesday, 2026-08-25.`;
+- **Bank Holiday Lag**: No settlements cleared on Saturdays/Sundays due to nodal clearing closures. Large accumulation credit scheduled for Tuesday.`;
         } else {
           botResponse = `💬 I understood your query, but for specific financial auditing, please ask about:
 - **"exceptions"** to see unresolved ledger mismatches.
@@ -230,10 +324,9 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
 
   // Filter and search ledger data
   const getFilteredTransactions = () => {
-    if (!reconData) return [];
+    if (!dbData) return [];
     
-    return reconData.reconciliationResults.filter(item => {
-      // Search filter
+    return dbData.reconciliationResults.filter(item => {
       const searchLower = searchQuery.toLowerCase();
       const matchSearch = 
         item.payment.id.toLowerCase().includes(searchLower) ||
@@ -241,7 +334,6 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
         (item.settlements[0]?.utr && item.settlements[0].utr.toLowerCase().includes(searchLower)) ||
         item.status.toLowerCase().includes(searchLower);
 
-      // Status filter
       if (statusFilter === 'all') return matchSearch;
       if (statusFilter === 'perfect') return matchSearch && item.status === 'Perfect Match';
       if (statusFilter === 'variance') return matchSearch && item.status === 'MDR Fee Variance Detected';
@@ -259,14 +351,13 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
     });
   };
 
-  // CSV Exporter for Exception List
   const exportExceptionsCSV = () => {
-    if (!reconData || reconData.exceptions.length === 0) return;
+    if (!dbData || dbData.exceptions.length === 0) return;
     
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Exception Type,Payment ID,Severity,Description,Discrepancy Amount (INR),Suggested Action\n";
     
-    reconData.exceptions.forEach(e => {
+    dbData.exceptions.forEach(e => {
       csvContent += `"${e.type}","${e.paymentId}","${e.severity}","${e.description}",${e.amount},"${e.resolution}"\n`;
     });
     
@@ -288,14 +379,14 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
 
   // Prepare Chart Coordinates
   const getChartPoints = () => {
-    if (!reconData || reconData.projections.length === 0) return [];
+    if (!dbData || dbData.projections.length === 0) return [];
     
-    const minVal = Math.min(...reconData.projections.map(p => p.closingBalance)) * 0.98;
-    const maxVal = Math.max(...reconData.projections.map(p => p.closingBalance)) * 1.02;
+    const minVal = Math.min(...dbData.projections.map(p => p.closingBalance)) * 0.98;
+    const maxVal = Math.max(...dbData.projections.map(p => p.closingBalance)) * 1.02;
     const range = maxVal - minVal;
 
-    return reconData.projections.map((p, index) => {
-      const x = chartPadding + (index * (chartWidth - chartPadding * 2) / (reconData.projections.length - 1));
+    return dbData.projections.map((p, index) => {
+      const x = chartPadding + (index * (chartWidth - chartPadding * 2) / (dbData.projections.length - 1));
       const y = chartHeight - chartPadding - ((p.closingBalance - minVal) * (chartHeight - chartPadding * 2) / range);
       return { x, y, data: p };
     });
@@ -307,6 +398,103 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
     ? `${chartPath} L ${chartPoints[chartPoints.length - 1].x} ${chartHeight - chartPadding} L ${chartPoints[0].x} ${chartHeight - chartPadding} Z`
     : '';
 
+  // ------------------------------
+  // 1. AUTH SCREEN VIEW
+  // ------------------------------
+  if (!user) {
+    return (
+      <div className="run-simulation-overlay" style={{ minHeight: '100vh', justifyContent: 'center' }}>
+        <div className="panel" style={{ width: '100%', maxWidth: '420px', padding: '32px', textAlign: 'left' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', justifyContent: 'center' }}>
+            <Activity className="simulation-icon" style={{ width: '28px', height: '28px', margin: 0 }} />
+            <h1 style={{ fontSize: '24px', fontWeight: '800', background: 'linear-gradient(135deg, #ffffff 0%, var(--neon-cyan) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>RazorOps AI</h1>
+          </div>
+
+          <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '6px', color: '#e5e7eb' }}>
+            {authMode === 'login' ? 'Finance Portal Sign-In' : 'Request Controller Access'}
+          </h2>
+          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
+            {authMode === 'login' ? 'Enter credentials to access reconciliation ledgers.' : 'Register email/password to create an auditor session.'}
+          </p>
+
+          {authError && (
+            <div style={{ background: 'var(--color-error-bg)', border: '1px solid var(--color-error-border)', color: 'var(--color-error)', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={14} />
+              <span>{authError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase' }}>Auditor Email</label>
+              <div className="ledger-search-container" style={{ minWidth: '100%' }}>
+                <LogIn size={14} style={{ color: '#4b5563' }} />
+                <input 
+                  type="email" 
+                  className="ledger-search-input"
+                  placeholder="admin@merchant.com"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase' }}>Auditor Password</label>
+              <div className="ledger-search-container" style={{ minWidth: '100%' }}>
+                <ShieldAlert size={14} style={{ color: '#4b5563' }} />
+                <input 
+                  type="password" 
+                  className="ledger-search-input"
+                  placeholder="••••••••"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn btn-success" 
+              style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '8px' }}
+              disabled={authLoading}
+            >
+              {authLoading ? (
+                <span>Securing Gateways...</span>
+              ) : authMode === 'login' ? (
+                <>
+                  <LogIn size={16} /> Authenticate Portal
+                </>
+              ) : (
+                <>
+                  <UserPlus size={16} /> Register Session Credentials
+                </>
+              )}
+            </button>
+          </form>
+
+          <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px' }}>
+            <span style={{ color: '#6b7280' }}>
+              {authMode === 'login' ? "Need controller credentials? " : "Already registered? "}
+            </span>
+            <button 
+              onClick={() => {
+                setAuthMode(authMode === 'login' ? 'signup' : 'login');
+                setAuthError('');
+              }}
+              style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', cursor: 'pointer', fontWeight: '600', textDecoration: 'underline' }}
+            >
+              {authMode === 'login' ? 'Register Now' : 'Sign In'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------
+  // 2. MAIN DASHBOARD VIEW
+  // ------------------------------
   return (
     <div className="dashboard">
       {/* HEADER SECTION */}
@@ -317,19 +505,26 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
             RazorOps AI
           </div>
           <span className="header-badge">Finance Controller v2.6</span>
+          {firestoreSynced && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '999px', padding: '4px 10px', fontSize: '10px', color: 'var(--color-success)', fontWeight: '600' }}>
+              <Database size={12} />
+              <span>FIRESTORE SYNC ACTIVE</span>
+            </div>
+          )}
         </div>
         <div className="header-actions">
-          {isCompleted && (
-            <button className="btn btn-secondary" onClick={resetSimulation}>
-              <RotateCcw size={16} /> Reset
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '8px' }}>
+            <span style={{ fontSize: '12px', color: '#9ca3af' }}>{user.email}</span>
+            <button className="btn btn-secondary" style={{ padding: '8px 12px' }} onClick={handleLogout}>
+              <LogOut size={14} /> Sign Out
             </button>
-          )}
+          </div>
           <button 
             className={`btn ${isRunning ? 'btn-disabled' : isCompleted ? 'btn-success' : ''}`}
             onClick={runSimulation}
             disabled={isRunning}
           >
-            <Play size={16} fill="white" /> {isRunning ? 'Reconciling Batch...' : isCompleted ? 'Audit Certified' : 'Run Reconciliation Agent'}
+            <Play size={16} fill="white" /> {isRunning ? 'Running Pipeline...' : isCompleted ? 'Reconciliation Active' : 'Run Reconciliation Agent'}
           </button>
         </div>
       </header>
@@ -342,10 +537,10 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
             Match Rate (Accuracy)
           </div>
           <div className={`metric-val ${isCompleted ? 'glow-blue' : ''}`}>
-            {isCompleted ? `${reconData.metrics.matchRate}%` : '0.0%'}
+            {isCompleted && dbData ? `${dbData.metrics.matchRate}%` : '0.0%'}
           </div>
           <div className="metric-change up">
-            {isCompleted ? `${reconData.metrics.resolvedCount} of ${reconData.metrics.totalRecords} matched` : 'Awaiting simulation run'}
+            {isCompleted && dbData ? `${dbData.metrics.resolvedCount} of ${dbData.metrics.totalRecords} matched` : 'Awaiting simulation run'}
           </div>
         </div>
 
@@ -355,7 +550,7 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
             Total Captured Value
           </div>
           <div className="metric-val">
-            {isCompleted ? `₹${reconData.metrics.totalCaptured.toLocaleString()}` : '₹0'}
+            {isCompleted && dbData ? `₹${dbData.metrics.totalCaptured.toLocaleString()}` : '₹0'}
           </div>
           <div className="metric-change" style={{ color: '#9ca3af' }}>
             Razorpay captured logs
@@ -367,11 +562,11 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
             <ShieldAlert size={16} style={{ color: 'var(--color-warning)' }} />
             Dispute Reserve holds
           </div>
-          <div className={`metric-val ${isCompleted && reconData.metrics.reserveHoldAmount > 0 ? 'glow-warning' : ''}`}>
-            {isCompleted ? `₹${reconData.metrics.reserveHoldAmount.toLocaleString()}` : '₹0'}
+          <div className={`metric-val ${isCompleted && dbData && dbData.metrics.reserveHoldAmount > 0 ? 'glow-warning' : ''}`}>
+            {isCompleted && dbData ? `₹${dbData.metrics.reserveHoldAmount.toLocaleString()}` : '₹0'}
           </div>
-          <div className="metric-change down" style={{ color: reconData?.metrics.reserveHoldAmount > 0 ? 'var(--color-warning)' : '#9ca3af' }}>
-            {isCompleted ? `${reconData.disputeAnalysis.totalDisputesCount} active disputes locked` : 'No locked reserves'}
+          <div className="metric-change down" style={{ color: dbData?.metrics.reserveHoldAmount > 0 ? 'var(--color-warning)' : '#9ca3af' }}>
+            {isCompleted && dbData ? `${dbData.disputeAnalysis.totalDisputesCount} active disputes locked` : 'No locked reserves'}
           </div>
         </div>
 
@@ -380,11 +575,11 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
             <AlertTriangle size={16} style={{ color: 'var(--color-error)' }} />
             Ledger Exceptions
           </div>
-          <div className={`metric-val ${isCompleted && reconData.metrics.unresolvedCount > 0 ? 'glow-red' : ''}`}>
-            {isCompleted ? reconData.metrics.unresolvedCount : '0'}
+          <div className={`metric-val ${isCompleted && dbData && dbData.metrics.unresolvedCount > 0 ? 'glow-red' : ''}`}>
+            {isCompleted && dbData ? dbData.metrics.unresolvedCount : '0'}
           </div>
-          <div className="metric-change down" style={{ color: reconData?.metrics.unresolvedCount > 0 ? 'var(--color-error)' : '#9ca3af' }}>
-            {isCompleted ? 'Requires manual resolution' : 'Zero flags escalated'}
+          <div className="metric-change down" style={{ color: dbData?.metrics.unresolvedCount > 0 ? 'var(--color-error)' : '#9ca3af' }}>
+            {isCompleted && dbData ? 'Requires manual resolution' : 'Zero flags escalated'}
           </div>
         </div>
 
@@ -394,10 +589,10 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
             Ending Liquidity
           </div>
           <div className="metric-val">
-            {isCompleted ? `₹${reconData.metrics.endingBalance.toLocaleString()}` : '₹0'}
+            {isCompleted && dbData ? `₹${dbData.metrics.endingBalance.toLocaleString()}` : '₹0'}
           </div>
           <div className="metric-change up">
-            {isCompleted ? 'Net bank balance forecast' : 'Starting balance: ₹500,000'}
+            {isCompleted && dbData ? 'Net bank balance forecast' : 'Starting balance: ₹500,000'}
           </div>
         </div>
       </section>
@@ -408,7 +603,7 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
           <Activity className="simulation-icon" />
           <h2 className="simulation-title">Multi-Agent Reconciliation Terminal</h2>
           <p className="simulation-desc">
-            Analyze 60 fragmented transactions across Razorpay capture webhooks, Nodal settlement reports, and ERP invoices. Watch specialized agents negotiate edge cases (MDR rates, Sunday timing cutoffs, chargeback reserves) in real-time.
+            Analyze 60 fragmented transactions across Razorpay capture webhooks, Nodal settlement reports, and ERP invoices. Watch specialized agents negotiate edge cases in real-time and save results directly to Cloud Firestore.
           </p>
           <button className="btn" onClick={runSimulation}>
             <Play size={16} fill="white" /> Launch Reconciliation Simulation
@@ -527,7 +722,7 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
           </div>
 
           {/* SPLIT COLUMN - BOTTOM: SVG Forecast & Exception List */}
-          {isCompleted && (
+          {isCompleted && dbData && (
             <div className="split-layout-bottom">
               
               {/* LIQUIDITY FORECAST CHART */}
@@ -640,20 +835,20 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
                 <div className="exception-header">
                   <div className="terminal-title">
                     <AlertCircle size={16} style={{ color: 'var(--color-error)' }} />
-                    Honest Exception List (Escalated Queue)
+                    Honest Exception List (Escalated Queue - Firestore)
                   </div>
                   <div className="exception-count">
-                    {reconData.exceptions.length} UNRESOLVED
+                    {dbData.exceptions.length} UNRESOLVED
                   </div>
                 </div>
                 <div className="exception-list">
-                  {reconData.exceptions.length === 0 ? (
+                  {dbData.exceptions.length === 0 ? (
                     <div className="empty-exception">
                       <CheckCircle className="empty-exception-icon" />
                       <span>Ledger balance 100% matched. Zero exceptions found.</span>
                     </div>
                   ) : (
-                    reconData.exceptions.map((exc, index) => (
+                    dbData.exceptions.map((exc, index) => (
                       <div key={index} className="exception-item">
                         <div className="exception-item-header">
                           <span className="exception-type">
@@ -689,7 +884,7 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
                     ))
                   )}
                 </div>
-                {reconData.exceptions.length > 0 && (
+                {dbData.exceptions.length > 0 && (
                   <button className="btn btn-secondary" style={{ marginTop: '12px', width: '100%', justifyContent: 'center' }} onClick={exportExceptionsCSV}>
                     <Download size={14} /> Export Exception CSV (Auditing Format)
                   </button>
@@ -699,12 +894,12 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
           )}
 
           {/* MASTER TRANSACTION LEDGER GRID */}
-          {isCompleted && (
+          {isCompleted && dbData && (
             <section className="panel ledger-panel">
               <div className="ledger-header">
                 <div className="terminal-title" style={{ fontSize: '15px' }}>
                   <FileText size={18} style={{ color: 'var(--color-info)' }} />
-                  Master Mapped Ledger Grid ({filteredTransactions.length} of {reconData.reconciliationResults.length} records)
+                  Master Mapped Ledger Grid ({filteredTransactions.length} of {dbData.reconciliationResults.length} records)
                 </div>
                 
                 <div className="ledger-search-filters">

@@ -14,7 +14,8 @@ import {
   Lock,
   Mail,
   Zap,
-  Globe
+  Globe,
+  UserCheck
 } from 'lucide-react';
 
 // Firebase imports
@@ -138,7 +139,7 @@ export default function App() {
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '');
       if (['studio', 'ledger', 'exceptions', 'forecast', 'copilot', 'history', 'settings', 'login'].includes(hash)) {
-        setActiveTab(hash);
+        setActiveTab((prev) => (prev !== hash ? hash : prev));
       }
     };
     window.addEventListener('hashchange', handleHash);
@@ -147,7 +148,7 @@ export default function App() {
 
   // Update hash when activeTab changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.location.hash.replace('#', '') !== activeTab) {
       window.location.hash = activeTab;
     }
   }, [activeTab]);

@@ -55,14 +55,18 @@ import AuthModal from './components/AuthModal';
 import LoginPage from './components/LoginPage';
 
 export default function App() {
-  // Navigation & Layout (Supports #login or ?tab=login URL routing)
+  // Navigation & Layout (Defaults to normal login page, or preserves URL hash/guest session)
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
-      if (window.location.hash === '#login' || window.location.search.includes('tab=login')) {
-        return 'login';
+      const hash = window.location.hash.replace('#', '');
+      if (['studio', 'ledger', 'exceptions', 'forecast', 'copilot', 'history', 'settings'].includes(hash)) {
+        return hash;
+      }
+      if (sessionStorage.getItem('razorops_guest_mode') === 'true') {
+        return 'studio';
       }
     }
-    return 'studio';
+    return 'login';
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -238,6 +242,9 @@ export default function App() {
   };
 
   const handleAuditorLogin = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('razorops_guest_mode', 'true');
+    }
     setUser({
       email: 'lead.auditor@razorops.ai',
       displayName: 'Lead Compliance Auditor',
@@ -248,6 +255,7 @@ export default function App() {
     setIsAuthModalOpen(false);
     subscribeToFirestore();
     fetchHistoricalBatches();
+    setActiveTab('studio');
   };
 
   const handleGoogleSignIn = async () => {
@@ -256,6 +264,10 @@ export default function App() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('razorops_guest_mode', 'true');
+      }
+      setActiveTab('studio');
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user') {
         setAuthError(err.message.replace('Firebase:', ''));
@@ -270,6 +282,9 @@ export default function App() {
       await signOut(auth);
     } catch (err) {
       console.warn("Sign out err:", err);
+    }
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('razorops_guest_mode');
     }
     setUser(null);
     setActiveTab('login');
@@ -476,19 +491,25 @@ export default function App() {
       <LoginPage
         onAuditorLogin={() => {
           handleAuditorLogin();
-          setActiveTab('studio');
         }}
         onGoogleSignIn={async () => {
           await handleGoogleSignIn();
-          setActiveTab('studio');
         }}
         onEmailAuth={async (email, password, isSignUp) => {
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('razorops_guest_mode', 'true');
+          }
           await handleEmailAuth(email, password, isSignUp);
           setActiveTab('studio');
         }}
         authError={authError}
         authLoading={authLoading}
-        onSkipToDashboard={() => setActiveTab('studio')}
+        onSkipToDashboard={() => {
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('razorops_guest_mode', 'true');
+          }
+          setActiveTab('studio');
+        }}
       />
     );
   }

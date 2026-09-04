@@ -22,6 +22,8 @@ export default function SettingsHub({
   setRazorpayKeyId,
   razorpayKeySecret,
   setRazorpayKeySecret,
+  openaiApiKey,
+  setOpenaiApiKey,
   geminiApiKey,
   setGeminiApiKey,
   mdrRates,
@@ -29,9 +31,11 @@ export default function SettingsHub({
   onSaveSettings
 }) {
   const [showSecret, setShowSecret] = useState(false);
+  const [showOpenai, setShowOpenai] = useState(false);
   const [showGemini, setShowGemini] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [testApiStatus, setTestApiStatus] = useState(null);
+  const [testOpenaiStatus, setTestOpenaiStatus] = useState(null);
   const [testGeminiStatus, setTestGeminiStatus] = useState(null);
   const [saveToast, setSaveToast] = useState(false);
 
@@ -53,6 +57,39 @@ export default function SettingsHub({
       }
       setTimeout(() => setTestApiStatus(null), 4000);
     }, 1000);
+  };
+
+  const handleTestOpenai = async () => {
+    if (!openaiApiKey) {
+      setTestOpenaiStatus('missing');
+      setTimeout(() => setTestOpenaiStatus(null), 3000);
+      return;
+    }
+
+    setTestOpenaiStatus('testing');
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey.trim()}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Respond with OK.' }],
+          max_tokens: 5
+        })
+      });
+
+      if (res.ok) {
+        setTestOpenaiStatus('success');
+      } else {
+        setTestOpenaiStatus('failed');
+      }
+    } catch (err) {
+      setTestOpenaiStatus('failed');
+    }
+    setTimeout(() => setTestOpenaiStatus(null), 4000);
   };
 
   const handleTestGemini = async () => {
@@ -260,6 +297,75 @@ export default function SettingsHub({
               )}
 
               {testGeminiStatus === 'missing' && (
+                <span className="text-amber-400 text-[11px] font-semibold">
+                  Enter key first
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: OpenAI Real LLM (GPT-4o-mini) */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-800">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">OpenAI API Key (Real LLM)</h3>
+              <p className="text-[11px] text-slate-400">Powers live GPT-4o-mini settlement reasoning for Copilot.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div>
+              <label className="block text-slate-400 mb-1 font-medium">OpenAI API Key (sk-...)</label>
+              <div className="relative">
+                <input
+                  type={showOpenai ? "text" : "password"}
+                  placeholder="sk-proj-... or sk-..."
+                  value={openaiApiKey}
+                  onChange={(e) => setOpenaiApiKey(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono placeholder-slate-600 focus:outline-none focus:border-emerald-500 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOpenai(!showOpenai)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                >
+                  {showOpenai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Enter your OpenAI key to unlock live, real GPT-4o-mini generation for any financial query.
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleTestOpenai}
+                disabled={testOpenaiStatus === 'testing'}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold border border-slate-700 transition-colors flex items-center space-x-1.5"
+              >
+                <Sparkles className={`w-3.5 h-3.5 text-emerald-400 ${testOpenaiStatus === 'testing' ? 'animate-spin' : ''}`} />
+                <span>Test OpenAI API</span>
+              </button>
+
+              {testOpenaiStatus === 'success' && (
+                <span className="text-emerald-400 text-[11px] font-semibold flex items-center space-x-1">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>OpenAI Connected!</span>
+                </span>
+              )}
+
+              {testOpenaiStatus === 'failed' && (
+                <span className="text-rose-400 text-[11px] font-semibold">
+                  Authentication Failed
+                </span>
+              )}
+
+              {testOpenaiStatus === 'missing' && (
                 <span className="text-amber-400 text-[11px] font-semibold">
                   Enter key first
                 </span>

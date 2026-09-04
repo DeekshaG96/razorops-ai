@@ -88,6 +88,7 @@ export default function App() {
   // Settings & Credentials
   const [razorpayKeyId, setRazorpayKeyId] = useState(() => localStorage.getItem('razorops_rzp_key_id') || '');
   const [razorpayKeySecret, setRazorpayKeySecret] = useState(() => localStorage.getItem('razorops_rzp_key_secret') || '');
+  const [openaiApiKey, setOpenaiApiKey] = useState(() => localStorage.getItem('razorops_openai_api_key') || '');
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('razorops_gemini_api_key') || '');
   const [mdrRates, setMdrRates] = useState(() => {
     try {
@@ -412,6 +413,7 @@ export default function App() {
   const handleSaveSettings = () => {
     localStorage.setItem('razorops_rzp_key_id', razorpayKeyId);
     localStorage.setItem('razorops_rzp_key_secret', razorpayKeySecret);
+    localStorage.setItem('razorops_openai_api_key', openaiApiKey);
     localStorage.setItem('razorops_gemini_api_key', geminiApiKey);
     localStorage.setItem('razorops_mdr_rates', JSON.stringify(mdrRates));
   };
@@ -520,7 +522,10 @@ export default function App() {
         {activeTab === 'copilot' && (
           <CopilotChatView
             contextData={dbData}
+            openaiApiKey={openaiApiKey}
+            setOpenaiApiKey={setOpenaiApiKey}
             geminiApiKey={geminiApiKey}
+            setGeminiApiKey={setGeminiApiKey}
             chatMessages={chatMessages}
             setChatMessages={setChatMessages}
           />
@@ -542,6 +547,8 @@ export default function App() {
             setRazorpayKeyId={setRazorpayKeyId}
             razorpayKeySecret={razorpayKeySecret}
             setRazorpayKeySecret={setRazorpayKeySecret}
+            openaiApiKey={openaiApiKey}
+            setOpenaiApiKey={setOpenaiApiKey}
             geminiApiKey={geminiApiKey}
             setGeminiApiKey={setGeminiApiKey}
             mdrRates={mdrRates}

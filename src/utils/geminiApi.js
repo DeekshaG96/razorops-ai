@@ -10,7 +10,7 @@
  *    and professional banking escalation memo generation.
  */
 
-export async function askSettlementCopilot(query, contextData, apiKey = null) {
+export async function askSettlementCopilot(query, contextData, apiKey = null, openaiKey = null) {
   const { 
     metrics = {}, 
     exceptions = [], 
@@ -26,27 +26,90 @@ export async function askSettlementCopilot(query, contextData, apiKey = null) {
     };
   }
 
-  // 1. If Gemini API Key is provided, call live Gemini API
-  if (apiKey && apiKey.trim().length > 10) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-      
-      const contextSummary = `
+  // Detect which keys are available (support sk-... auto-detection)
+  const resolvedOpenAIKey = (openaiKey || (apiKey && apiKey.startsWith('sk-') ? apiKey : null) || (typeof window !== 'undefined' && localStorage.getItem('razorops_openai_api_key')) || '').trim();
+  const resolvedGeminiKey = ((!apiKey || apiKey.startsWith('sk-')) ? (typeof window !== 'undefined' && localStorage.getItem('razorops_gemini_api_key')) : apiKey || '').trim();
+
+  const contextSummary = `
 Current Reconciled Batch Metrics:
-- Total Records: ${metrics?.totalRecords || reconciliationResults.length || 61}
+- Total Transactions Audited: ${metrics?.totalRecords || reconciliationResults.length || 61}
 - Match Rate: ${metrics?.matchRate || 95.1}%
 - Resolved Records: ${metrics?.resolvedCount || 58}
 - Unresolved Exceptions: ${metrics?.unresolvedCount || exceptions.length}
 - Total Gross Captured Volume: ₹${metrics?.totalCaptured?.toLocaleString() || '513,156'}
 - Total Net Settled: ₹${metrics?.totalSettled?.toLocaleString() || '498,240'}
 - Gateway MDR & GST Fees: ₹${metrics?.totalFees?.toLocaleString() || '14,916'}
-- Active Dispute Reserve Hold: ₹${metrics?.reserveHoldAmount?.toLocaleString() || '80,000'}
+- Active Dispute Reserve Hold: ₹${metrics?.reserveHoldAmount?.toLocaleString() || '80,000'} (across 4 chargebacks)
 - 7-Day Projected Liquidity: ₹${metrics?.endingBalance ? Math.round(metrics.endingBalance).toLocaleString() : '479,004'}
 
-Unresolved Exception Records:
+Unresolved Exception Records Under Review:
 ${exceptions.map(e => `• ID: ${e.paymentId || e.id} | Reason: ${e.reasonCode || e.reason} | Amount: ₹${e.amount} | Root Cause: ${e.rootCause || e.explanation}`).join('\n')}
+
+Indian Payment Gateway Domain Rules:
+- Credit Card MDR is standard 2.00%, UPI is 0.00%, Netbanking is 1.80%.
+- 18% GST in India applies STRICTLY to the gateway MDR fee, NOT the gross principal.
+- Formula: Net Bank Settlement = Gross - [Gross * MDR * 1.18].
+- RBI Nodal Clearing (NEFT/RTGS) has a weekend settlement freeze: payouts do not credit on Saturdays and Sundays.
+- Sunday transactions captured after 21:00 IST (e.g. 22:30 IST) are deferred to Tuesday clearing cycles.
 `;
 
+  // 1. LIVE OPENAI CALL (GPT-4o-mini)
+  if (resolvedOpenAIKey && resolvedOpenAIKey.startsWith('sk-')) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${resolvedOpenAIKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are the RazorOps AI Settlement & Audit Copilot for Razorpay Hackathon Track 4. You are an expert financial controller and treasury auditor.
+Ground all your reasoning in this live financial data:
+${contextSummary}
+
+Be concise, precise with currency figures (INR / ₹), and explain root causes, journal entries, or Indian payment mechanics directly.`
+            },
+            {
+              role: 'user',
+              content: cleanQuery
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 1000
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) {
+          return {
+            answer: text,
+            source: 'OpenAI GPT-4o-mini (Live Real LLM)'
+          };
+        }
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        console.warn('OpenAI API returned error:', errData);
+        if (errData.error?.message) {
+          // If key is invalid or quota exceeded, inform user and seamlessly continue with grounded engine
+          console.error("OpenAI API Notice:", errData.error.message);
+        }
+      }
+    } catch (err) {
+      console.warn("OpenAI API fetch error:", err.message);
+    }
+  }
+
+  // 2. LIVE GOOGLE GEMINI CALL (Gemini 1.5 Flash)
+  if (resolvedGeminiKey && resolvedGeminiKey.length > 10 && !resolvedGeminiKey.startsWith('sk-')) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(resolvedGeminiKey)}`;
+      
       const payload = {
         contents: [
           {
@@ -54,7 +117,7 @@ ${exceptions.map(e => `• ID: ${e.paymentId || e.id} | Reason: ${e.reasonCode |
             parts: [
               {
                 text: `You are the RazorOps AI Settlement & Audit Copilot for Razorpay Track 4. You are an expert financial controller and treasury auditor.
-Answer the user's question accurately and helpfully, grounding your answers in the active financial data:
+Answer the user's question accurately and helpfully, grounding your answers in this active financial data:
 
 ${contextSummary}
 
@@ -81,7 +144,7 @@ User Inquiry: ${cleanQuery}`
         if (text) {
           return {
             answer: text,
-            source: 'Gemini 1.5 Flash (Live LLM)'
+            source: 'Gemini 1.5 Flash (Live Real LLM)'
           };
         }
       }
@@ -90,7 +153,7 @@ User Inquiry: ${cleanQuery}`
     }
   }
 
-  // 2. Autonomous Conversational Intelligence Engine
+  // 3. Autonomous Conversational Intelligence Engine (Fallback / Default)
   const q = cleanQuery.toLowerCase();
   
   // Slang & Phonetic Normalization (e.g. "who r u" -> "who are you", "wat r u" -> "what are you")

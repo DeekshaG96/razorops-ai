@@ -5,8 +5,6 @@ import {
   Lock, 
   Mail, 
   ArrowRight, 
-  UserCheck, 
-  Sparkles, 
   Eye, 
   EyeOff, 
   RotateCw, 
@@ -14,7 +12,6 @@ import {
 } from 'lucide-react';
 
 export default function LoginPage({
-  onAuditorLogin,
   onGoogleSignIn,
   onEmailAuth,
   authError,
@@ -68,27 +65,6 @@ export default function LoginPage({
               ? 'Get started with autonomous 3-way reconciliation' 
               : 'Welcome back! Enter your merchant credentials'}
           </p>
-        </div>
-
-        {/* 1-Click Auditor Session Fast-Pass (For Video Demo & Evaluators) */}
-        <div className="mb-5 p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/70 text-center">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-blue-900 mb-1.5 px-0.5">
-            <span className="flex items-center space-x-1">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>Hackathon & Video Demo Pass</span>
-            </span>
-            <span className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.2 rounded-full">
-              1-Click
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={onAuditorLogin}
-            className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-500/20 transition-all flex items-center justify-center space-x-1.5 cursor-pointer hover:scale-[1.01]"
-          >
-            <UserCheck className="w-4 h-4" />
-            <span>Launch Lead Auditor Demo (1-Click)</span>
-          </button>
         </div>
 
         {/* Google Single Sign-On Button */}

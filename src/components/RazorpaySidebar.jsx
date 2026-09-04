@@ -10,6 +10,7 @@ import {
   Settings, 
   Database, 
   LogOut, 
+  LogIn,
   UserCheck,
   ShieldCheck,
   Sparkles,
@@ -52,6 +53,7 @@ export default function RazorpaySidebar({
       items: [
         { id: 'history', label: 'Batch History', icon: History, badge: null },
         { id: 'settings', label: 'Settings & MDR Rates', icon: Settings, badge: null },
+        { id: 'login', label: user ? 'Account & Sign In' : 'Merchant Sign In', icon: LogIn, badge: user ? 'Active' : 'Portal', badgeColor: user ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200 font-bold' },
       ]
     }
   ];

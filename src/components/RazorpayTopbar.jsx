@@ -11,16 +11,20 @@ import {
   Layers,
   ChevronRight,
   Database,
-  UserCheck
+  UserCheck,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 
 export default function RazorpayTopbar({
   activeTab,
+  setActiveTab,
   setMobileOpen,
   onRunEngine,
   isRunning,
   user,
   onAuditorLogin,
+  onSignOut,
   unresolvedCount = 0
 }) {
   const getTabTitle = () => {
@@ -32,6 +36,7 @@ export default function RazorpayTopbar({
       case 'copilot': return 'Ray AI Settlement Copilot';
       case 'history': return 'Cloud Historical Batches';
       case 'settings': return 'Merchant Settings & Fee Tiers';
+      case 'login': return 'Merchant Authentication Portal';
       default: return 'Overview';
     }
   };
@@ -42,7 +47,7 @@ export default function RazorpayTopbar({
       <div className="flex items-center space-x-3">
         <button
           onClick={() => setMobileOpen(true)}
-          className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900"
+          className="lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -80,24 +85,56 @@ export default function RazorpayTopbar({
         </div>
 
         {/* Action Button: Run Reconciliation */}
-        {activeTab === 'studio' ? (
+        {activeTab === 'studio' && (
           <button
             onClick={onRunEngine}
             disabled={isRunning}
-            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all whitespace-nowrap disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all whitespace-nowrap disabled:opacity-50 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>{isRunning ? 'Auditing...' : 'Run Pipeline'}</span>
           </button>
-        ) : !user ? (
-          <button
-            onClick={onAuditorLogin}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-colors"
-          >
-            <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-            <span>Auditor Login</span>
-          </button>
-        ) : null}
+        )}
+
+        {/* Login / Auth Portal Navigation */}
+        {!user ? (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setActiveTab && setActiveTab('login')}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#0c2340] hover:bg-[#163a66] text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              title="Open Razorpay Merchant Login Portal"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Merchant Sign In</span>
+            </button>
+            <button
+              onClick={onAuditorLogin}
+              className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              title="1-Click Fast Pass"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>1-Click Pass</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <div 
+              onClick={() => setActiveTab && setActiveTab('login')}
+              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold cursor-pointer hover:bg-emerald-100 transition-colors"
+              title="Click to manage Merchant Account"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="truncate max-w-[120px]">{user.displayName || user.email?.split('@')[0] || 'Auditor'}</span>
+            </div>
+            <button
+              onClick={onSignOut}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+              title="Sign Out to Login Page"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -51,10 +51,18 @@ import CopilotChatView from './components/CopilotChatView';
 import HistoricalBatchesView from './components/HistoricalBatchesView';
 import SettingsHub from './components/SettingsHub';
 import AuthModal from './components/AuthModal';
+import LoginPage from './components/LoginPage';
 
 export default function App() {
-  // Navigation & Layout
-  const [activeTab, setActiveTab] = useState('studio');
+  // Navigation & Layout (Supports #login or ?tab=login URL routing)
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#login' || window.location.search.includes('tab=login')) {
+        return 'login';
+      }
+    }
+    return 'studio';
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -124,6 +132,25 @@ export default function App() {
       terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [simulatedLogs]);
+
+  // URL Hash Synchronization (#login, #studio, etc.)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['studio', 'ledger', 'exceptions', 'forecast', 'copilot', 'history', 'settings', 'login'].includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  // Update hash when activeTab changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.location.hash = activeTab;
+    }
+  }, [activeTab]);
 
   // Fetch Firestore Historical Batches
   const fetchHistoricalBatches = async () => {
@@ -244,6 +271,7 @@ export default function App() {
       console.warn("Sign out err:", err);
     }
     setUser(null);
+    setActiveTab('login');
   };
 
   // File Upload Handler
@@ -441,6 +469,29 @@ export default function App() {
     }
   }, []);
 
+  // Dedicated Full-Screen Razorpay Merchant Login Portal
+  if (activeTab === 'login') {
+    return (
+      <LoginPage
+        onAuditorLogin={() => {
+          handleAuditorLogin();
+          setActiveTab('studio');
+        }}
+        onGoogleSignIn={async () => {
+          await handleGoogleSignIn();
+          setActiveTab('studio');
+        }}
+        onEmailAuth={async (email, password, isSignUp) => {
+          await handleEmailAuth(email, password, isSignUp);
+          setActiveTab('studio');
+        }}
+        authError={authError}
+        authLoading={authLoading}
+        onSkipToDashboard={() => setActiveTab('studio')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-800 font-sans flex antialiased selection:bg-blue-600 selection:text-white">
       
@@ -469,11 +520,13 @@ export default function App() {
         {/* Razorpay Topbar */}
         <RazorpayTopbar
           activeTab={activeTab}
+          setActiveTab={setActiveTab}
           setMobileOpen={setMobileOpen}
           onRunEngine={handleRunEngine}
           isRunning={isRunning}
           user={user}
-          onAuditorLogin={() => setIsAuthModalOpen(true)}
+          onAuditorLogin={handleAuditorLogin}
+          onSignOut={handleSignOut}
           unresolvedCount={dbData?.metrics?.unresolvedCount || dbData?.exceptions?.length || 0}
         />
 
@@ -482,30 +535,37 @@ export default function App() {
           
           {/* Sleek Evaluator Notice (if not logged in) */}
           {!user && (
-            <div className="bg-blue-50/90 border border-blue-200/90 rounded-2xl px-5 py-3 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 backdrop-blur-md">
+            <div className="bg-blue-50/90 border border-blue-200/90 rounded-2xl px-5 py-3.5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 backdrop-blur-md">
               <div className="flex items-center space-x-3 text-xs">
-                <div className="p-1.5 rounded-xl bg-blue-100 text-blue-700 flex-shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
+                <div className="p-2 rounded-xl bg-blue-100 text-blue-700 flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="font-bold text-blue-950 tracking-tight mr-1.5">Evaluator Sandbox Session:</span>
-                  <span className="text-slate-600">Previewing Razorpay Track 4 Multi-Agent Pipeline with live execution privileges.</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-blue-950 tracking-tight text-sm">Evaluator Sandbox Session</span>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">Live Execution Enabled</span>
+                  </div>
+                  <p className="text-slate-600 text-xs mt-0.5">
+                    Testing Razorpay Track 4? You can open the dedicated Merchant Login Portal or authenticate in 1-click.
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-2 w-full sm:w-auto flex-shrink-0">
                 <button
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="w-full sm:w-auto px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap transition-all flex items-center space-x-1.5"
+                  id="open-login-portal-banner-btn"
+                  onClick={() => setActiveTab('login')}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#0c2340] hover:bg-[#163a66] text-white rounded-xl text-xs font-bold shadow-sm whitespace-nowrap transition-all flex items-center justify-center space-x-1.5 cursor-pointer hover:scale-[1.01]"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Sign In / Auditor Login</span>
+                  <LogIn className="w-4 h-4" />
+                  <span>Open Merchant Login Page</span>
                 </button>
                 <button
-                  onClick={handleGoogleSignIn}
-                  className="w-full sm:w-auto px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors shadow-xs"
+                  onClick={handleAuditorLogin}
+                  className="w-full sm:w-auto px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer"
                 >
-                  Google Sign In
+                  <UserCheck className="w-4 h-4 text-emerald-600" />
+                  <span>1-Click Fast Pass</span>
                 </button>
               </div>
             </div>

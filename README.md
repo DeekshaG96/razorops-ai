@@ -8,7 +8,7 @@
 
 > **Razorpay AI Buildathon 2026 Submission**  
 > **Track 4**: Autonomous Reconciliation & Liquidity Engine  
-> **Candidate**: Deeksha G ([GitHub: @DeekshaG96](https://github.com/DeekshaG96) • ganchu355@gmail.com)  
+> **Candidate**: Deeksha G ([GitHub: @DeekshaG96](https://github.com/DeekshaG96))  
 > **Live Production Deployment**: [https://razorops-ai.web.app](https://razorops-ai.web.app)  
 > **Alternative Mirror**: [https://razorops-ai.firebaseapp.com](https://razorops-ai.firebaseapp.com)
 

@@ -60,8 +60,12 @@ export default function SettingsHub({
     }, 1000);
   };
 
+  const hasEnvGemini = Boolean(import.meta.env?.VITE_GEMINI_API_KEY);
+  const hasEnvOpenai = Boolean(import.meta.env?.VITE_OPENAI_API_KEY);
+
   const handleTestOpenai = async () => {
-    if (!openaiApiKey) {
+    const keyToTest = (openaiApiKey || import.meta.env?.VITE_OPENAI_API_KEY || '').trim();
+    if (!keyToTest) {
       setTestOpenaiStatus('missing');
       setTimeout(() => setTestOpenaiStatus(null), 3000);
       return;
@@ -73,7 +77,7 @@ export default function SettingsHub({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey.trim()}`
+          'Authorization': `Bearer ${keyToTest}`
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
@@ -99,7 +103,8 @@ export default function SettingsHub({
   };
 
   const handleTestGemini = async () => {
-    if (!geminiApiKey) {
+    const keyToTest = (geminiApiKey || import.meta.env?.VITE_GEMINI_API_KEY || '').trim();
+    if (!keyToTest) {
       setTestGeminiStatus('missing');
       setTimeout(() => setTestGeminiStatus(null), 3000);
       return;
@@ -110,7 +115,7 @@ export default function SettingsHub({
       let isSuccess = false;
       for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']) {
         try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiApiKey.trim())}`;
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(keyToTest)}`;
           const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -256,37 +261,63 @@ export default function SettingsHub({
 
         {/* Card 2: Google Gemini AI Copilot API */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-              <Sparkles className="w-5 h-5" />
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center space-x-2.5">
+              <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Google Gemini API Key</h3>
+                <p className="text-[11px] text-slate-500">Powers live multimodal financial reasoning for Copilot.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">Google Gemini API Key</h3>
-              <p className="text-[11px] text-slate-500">Powers live multimodal financial reasoning for Copilot.</p>
-            </div>
+            {hasEnvGemini && (
+              <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Active in .env</span>
+              </span>
+            )}
           </div>
 
           <div className="space-y-3 text-xs">
+            {hasEnvGemini && !geminiApiKey && (
+              <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200/80 text-indigo-950 text-[11px] leading-relaxed flex items-start space-x-2.5">
+                <Lock className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-bold text-indigo-900">Active via System Environment (.env.local)</div>
+                  <div className="text-slate-600 text-[10.5px] mt-0.5">
+                    Your key is active and powering Copilot. For security, raw API key strings are never displayed on screen.
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="block text-slate-700 mb-1 font-medium">Gemini API Key (AI Studio)</label>
+              <label className="block text-slate-700 mb-1 font-medium">
+                {hasEnvGemini ? 'Custom Gemini Key Override (Optional)' : 'Gemini API Key (AI Studio)'}
+              </label>
               <div className="relative">
                 <input
                   type={showGemini ? "text" : "password"}
-                  placeholder="AIzaSy..."
+                  placeholder={hasEnvGemini ? "•••••••••••••••• (Leave blank to keep using .env)" : "AIzaSy..."}
                   value={geminiApiKey}
                   onChange={(e) => setGeminiApiKey(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowGemini(!showGemini)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showGemini ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                {geminiApiKey ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowGemini(!showGemini)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showGemini ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                ) : null}
               </div>
               <p className="text-[10px] text-slate-500 mt-1">
-                Leave blank to use the built-in grounded heuristic financial copilot.
+                {hasEnvGemini
+                  ? "Your environment key is active. Enter a key here only if you want to override it."
+                  : "Leave blank to use the built-in grounded heuristic financial copilot."}
               </p>
             </div>
 
@@ -316,7 +347,7 @@ export default function SettingsHub({
 
               {testGeminiStatus === 'missing' && (
                 <span className="text-amber-600 text-[11px] font-semibold">
-                  Enter key first
+                  No key configured
                 </span>
               )}
             </div>
@@ -325,37 +356,63 @@ export default function SettingsHub({
 
         {/* Card 3: OpenAI Real LLM (GPT-4o-mini) */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-              <Sparkles className="w-5 h-5" />
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center space-x-2.5">
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">OpenAI API Key (Real LLM)</h3>
+                <p className="text-[11px] text-slate-500">Powers live GPT-4o-mini settlement reasoning for Copilot.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900">OpenAI API Key (Real LLM)</h3>
-              <p className="text-[11px] text-slate-500">Powers live GPT-4o-mini settlement reasoning for Copilot.</p>
-            </div>
+            {hasEnvOpenai && (
+              <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Active in .env</span>
+              </span>
+            )}
           </div>
 
           <div className="space-y-3 text-xs">
+            {hasEnvOpenai && !openaiApiKey && (
+              <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-emerald-950 text-[11px] leading-relaxed flex items-start space-x-2.5">
+                <Lock className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="font-bold text-emerald-900">Active via System Environment (.env.local)</div>
+                  <div className="text-slate-600 text-[10.5px] mt-0.5">
+                    Your key is active and powering Copilot. For security, raw API key strings are never displayed on screen.
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="block text-slate-700 mb-1 font-medium">OpenAI API Key (sk-...)</label>
+              <label className="block text-slate-700 mb-1 font-medium">
+                {hasEnvOpenai ? 'Custom OpenAI Key Override (Optional)' : 'OpenAI API Key (sk-...)'}
+              </label>
               <div className="relative">
                 <input
                   type={showOpenai ? "text" : "password"}
-                  placeholder="sk-proj-... or sk-..."
+                  placeholder={hasEnvOpenai ? "•••••••••••••••• (Leave blank to keep using .env)" : "sk-proj-... or sk-..."}
                   value={openaiApiKey}
                   onChange={(e) => setOpenaiApiKey(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowOpenai(!showOpenai)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showOpenai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                {openaiApiKey ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowOpenai(!showOpenai)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showOpenai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                ) : null}
               </div>
               <p className="text-[10px] text-slate-500 mt-1">
-                Enter your OpenAI key to unlock live, real GPT-4o-mini generation for any financial query.
+                {hasEnvOpenai
+                  ? "Your environment key is active. Enter a key here only if you want to override it."
+                  : "Enter your OpenAI key to unlock live, real GPT-4o-mini generation for any financial query."}
               </p>
             </div>
 
@@ -392,7 +449,7 @@ export default function SettingsHub({
 
               {testOpenaiStatus === 'missing' && (
                 <span className="text-amber-600 text-[11px] font-semibold">
-                  Enter key first
+                  No key configured
                 </span>
               )}
             </div>

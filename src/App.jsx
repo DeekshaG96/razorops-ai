@@ -87,11 +87,17 @@ export default function App() {
   // HITL Resolved Exceptions
   const [resolvedExceptionIds, setResolvedExceptionIds] = useState({});
 
-  // Settings & Credentials
+  // Settings & Credentials (never expose .env secrets into editable input states)
   const [razorpayKeyId, setRazorpayKeyId] = useState(() => localStorage.getItem('razorops_rzp_key_id') || '');
   const [razorpayKeySecret, setRazorpayKeySecret] = useState(() => localStorage.getItem('razorops_rzp_key_secret') || '');
-  const [openaiApiKey, setOpenaiApiKey] = useState(() => localStorage.getItem('razorops_openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '');
-  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('razorops_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '');
+  const [openaiApiKey, setOpenaiApiKey] = useState(() => {
+    const saved = localStorage.getItem('razorops_openai_api_key') || '';
+    return (saved && saved === import.meta.env?.VITE_OPENAI_API_KEY) ? '' : saved;
+  });
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+    const saved = localStorage.getItem('razorops_gemini_api_key') || '';
+    return (saved && saved === import.meta.env?.VITE_GEMINI_API_KEY) ? '' : saved;
+  });
   const [mdrRates, setMdrRates] = useState(() => {
     try {
       const saved = localStorage.getItem('razorops_mdr_rates');
@@ -420,18 +426,19 @@ export default function App() {
     localStorage.setItem('razorops_mdr_rates', JSON.stringify(mdrRates));
   };
 
-  // Pre-load demo dataset on mount if none exists & populate default env keys
+  // Pre-load demo dataset on mount if none exists & clean any accidental storage of env secrets
   useEffect(() => {
     if (!dbData) {
       const demoData = generateSyntheticData();
       const result = controllerAgent.run(demoData);
       setDbData(result);
     }
-    if (!openaiApiKey && import.meta.env.VITE_OPENAI_API_KEY) {
-      setOpenaiApiKey(import.meta.env.VITE_OPENAI_API_KEY);
+    // Clean any prior localStorage saves of environment keys
+    if (localStorage.getItem('razorops_openai_api_key') === import.meta.env?.VITE_OPENAI_API_KEY) {
+      localStorage.removeItem('razorops_openai_api_key');
     }
-    if (!geminiApiKey && import.meta.env.VITE_GEMINI_API_KEY) {
-      setGeminiApiKey(import.meta.env.VITE_GEMINI_API_KEY);
+    if (localStorage.getItem('razorops_gemini_api_key') === import.meta.env?.VITE_GEMINI_API_KEY) {
+      localStorage.removeItem('razorops_gemini_api_key');
     }
   }, []);
 

@@ -92,7 +92,35 @@ User Inquiry: ${cleanQuery}`
 
   // 2. Autonomous Conversational Intelligence Engine
   const q = cleanQuery.toLowerCase();
-  const normalizedWords = q.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  
+  // Slang & Phonetic Normalization (e.g. "who r u" -> "who are you", "wat r u" -> "what are you")
+  const slangMap = {
+    'r': 'are',
+    'u': 'you',
+    'ur': 'your',
+    'wat': 'what',
+    'wht': 'what',
+    'hw': 'how',
+    'bcoz': 'because',
+    'cuz': 'because',
+    'plz': 'please',
+    'pls': 'please',
+    'abt': 'about',
+    'tx': 'thanks',
+    'thx': 'thanks',
+    'ty': 'thanks',
+    'tq': 'thanks',
+    'k': 'ok',
+    'okk': 'ok',
+    'okay': 'ok',
+    'wbu': 'what about you',
+    'idk': 'i do not know',
+    'rn': 'right now'
+  };
+
+  const rawWords = q.replace(/[^a-z0-9\s_-]/g, ' ').split(/\s+/).filter(Boolean);
+  const normalizedWords = rawWords.map(w => slangMap[w] || w);
+  const expandedQ = normalizedWords.join(' ');
 
   // A. GREETINGS & CASUAL CONVERSATION (including typos like "hloo", "helo", "yo", etc.)
   const greetingTriggers = [
@@ -121,23 +149,125 @@ I am actively monitoring your live reconciliation batch (**${metrics?.matchRate 
     };
   }
 
-  // B. IDENTITY & CAPABILITIES
-  if (/who are you|what is this|what can you do|help|how to use|commands/i.test(q)) {
+  // B. STATUS / "HOW ARE YOU"
+  if (/how are you|how r you|how r u|how do you do|hows it going|how are things|wassup/i.test(expandedQ)) {
     return {
-      answer: `🤖 **About RazorOps AI Copilot (Razorpay Track 4):**
+      answer: `🟢 **System Operational & Monitoring Live Ledgers!**
 
-I am an autonomous multi-agent financial controller built to eliminate manual reconciliation between:
-1. **Razorpay Payment Gateway** (captures, MDR fees, refunds)
-2. **RBI Nodal Bank Accounts** (HDFC, ICICI, Axis batch payout UTRs)
-3. **ERP Accounting Systems** (SAP, NetSuite sales invoices)
+I am functioning at peak accuracy:
+• **Three-Way Reconciliation Loop**: Active (${metrics?.matchRate || 93.4}% verified match rate)
+• **Dispute Sentinel**: Active (Securing ₹${metrics?.reserveHoldAmount?.toLocaleString() || '80,000'} in escrow reserve)
+• **Cashflow Forecast**: Synchronized with RBI NEFT/RTGS settlement clearing calendars
 
-**Core Capabilities:**
-• **Zero-Tolerance 3-Way Matching**: Audits transactions down to ₹0.01 tolerance.
-• **Dispute Risk Isolation**: Identifies fraud signals and calculates provisional reserve hold locks.
-• **Nodal Liquidity Modeling**: Forecasts 7-day cashflow while accounting for weekend nodal settlement freezes.
-• **Automated Remediation**: Generates signed audit resolution memos with remedial accounting journal entries.
+How can I assist your financial audit right now?`,
+      source: 'RazorOps AI Engine'
+    };
+  }
 
-Type any transaction ID or financial question to begin!`,
+  // C. IDENTITY & ROLE ("who r u", "who are you", "what are you", "introduce yourself", "tell me about yourself", "what do you do")
+  if (/who (are|r|is) (you|u)|whoru|what (are|r|is) (you|u)|introduce yourself|tell me about yourself|about you|what is razorops|what is this app|what do you do/i.test(expandedQ) || /who (you|u)/i.test(expandedQ)) {
+    return {
+      answer: `🤖 **I am RazorOps AI — your Autonomous Settlement & Audit Copilot.**
+
+I was engineered for the **Razorpay Hackathon Track 4 (Autonomous Reconciliation & Liquidity Engine)** as an intelligent, zero-manual-effort financial compliance copilot.
+
+### 🏛️ My Autonomous Multi-Agent Architecture:
+1. **Reconciliation Agent**: Continuously cross-audits 3 disparate ledgers (Razorpay Gateway API, RBI Nodal Bank UTRs, and ERP Sales Invoices) down to < ₹0.01 precision.
+2. **Dispute Sentinel**: Flags chargeback spikes, calculates provisional reserve hold locks (e.g. ₹80,000), and shields treasury cash from unexpected dispute clawbacks.
+3. **Cashflow Forecaster**: Projects 7-day net liquidity, enforcing Indian banking calendar constraints (zero nodal payouts on RBI weekend closures).
+4. **Controller Orchestrator**: Generates cryptographically signed (SHA-256) audit memos with double-entry journal postings (\`DR: Bank Clearing\`, \`CR: Merchant Settlement\`) for automated resolution.
+
+### 💡 What You Can Ask Me:
+• *"Explain transaction pay_99001122"*
+• *"Why is ₹80,000 locked in dispute reserve?"*
+• *"How are gateway MDR and 18% GST calculated?"*
+• *"Draft an escalation letter to Razorpay nodal desk"*
+• *"What is our projected liquidity over the next 7 days?"*
+• *"Who made you?"* or *"What is Track 4?"*`,
+      source: 'RazorOps AI Engine'
+    };
+  }
+
+  // D. CREATORS & DEVELOPERS ("who made you", "who built you", "who created you", "developer", "author")
+  if (/who (made|created|built|developed|designed) (you|u)|creator|developer|author/i.test(expandedQ)) {
+    return {
+      answer: `👨‍💻 **Created for Razorpay Hackathon Track 4**:
+
+I was engineered by **Deeksha & Team (ganchu355@gmail.com)** specifically for **Razorpay Hackathon Track 4: Autonomous Reconciliation & Liquidity Engine**.
+
+**Architecture Highlights:**
+• **Frontend**: React, Vite, Lucide Icons, Glassmorphic Tailwind UI with responsive accessibility
+• **Autonomous Multi-Agent System**: 4 specialized agents (Reconciliation, Dispute Sentinel, Cashflow Forecaster, Controller)
+• **Real-Time Cloud Ledger**: Google Cloud Firestore real-time synchronization
+• **Precision Accounting**: IEEE 754 floating-point safe math engine (< ₹0.01 tolerance)
+• **Cryptographic Integrity**: SHA-256 hashed audit resolution memos`,
+      source: 'RazorOps AI Engine'
+    };
+  }
+
+  // E. TRACK 4 / HACKATHON
+  if (/track 4|hackathon|problem statement/i.test(expandedQ)) {
+    return {
+      answer: `🏆 **Razorpay Hackathon Track 4: Autonomous Reconciliation & Liquidity Engine**
+
+**The Challenge:**
+Modern merchants processing thousands of daily transactions on Razorpay face critical operational friction:
+1. **Three-Way Discrepancies**: Inconsistencies between payment gateway logs, bank settlement UTR files, and internal ERP invoices.
+2. **Hidden Fee Overcharges**: Acquirers misapplying MDR rates or miscalculating 18% GST on processing fees.
+3. **Timing Cutoff Lags**: Payments captured late Sunday evening (e.g. 22:30 IST) getting pushed into T+2 cycles, triggering false missing settlement alarms.
+4. **Weekend Liquidity Freezes**: Nodal clearing banks (RBI NEFT/RTGS) do not disburse settlements on Saturdays and Sundays.
+
+**The RazorOps AI Solution:**
+An autonomous multi-agent engine that auto-reconciles 95%+ of transactions instantly, isolates true exceptions with cryptographic audit memos, and forecasts accurate 7-day cashflow runways.`,
+      source: 'RazorOps AI Engine'
+    };
+  }
+
+  // F. POLITENESS, COMPLIMENTS & ACKNOWLEDGMENTS
+  if (/^(thanks|thank you|thx|ty|tq|good job|nice|awesome|great|cool|superb|brilliant|well done)/i.test(expandedQ) || expandedQ === 'ok' || expandedQ === 'okay') {
+    return {
+      answer: `✨ **You're very welcome!**
+
+I am always on duty to protect your treasury cashflow, reconcile variances down to the paisa, and keep your books audit-ready. 
+
+Feel free to inspect any transaction ID (\`pay_1001\`, \`pay_99001122\`), ask about dispute holds, or check the **Exceptions Desk** tab to auto-resolve pending items!`,
+      source: 'RazorOps AI Engine'
+    };
+  }
+
+  // G. FAREWELLS
+  if (/^(bye|goodbye|see you|cya|exit|quit)/i.test(expandedQ)) {
+    return {
+      answer: `👋 **Goodbye, Auditor!**
+
+All your reconciliation batches, resolution memos, and audit traces are permanently preserved in Cloud Firestore. Have a great day, and feel free to return whenever new settlement UTRs arrive!`,
+      source: 'RazorOps AI Engine'
+    };
+  }
+
+  // H. HELP & CAPABILITIES
+  if (/help|commands|how to use|features|what can (i|you) do/i.test(expandedQ)) {
+    return {
+      answer: `🛠️ **RazorOps Copilot Command & Query Guide:**
+
+Here are sample inquiries you can run:
+
+1. **Transaction Trace**:
+   • *"Look up pay_1001"*
+   • *"Why is pay_99001122 an exception?"*
+   • *"Check UTR_90001"*
+2. **Dispute Sentinel**:
+   • *"Why is ₹80,000 locked in dispute reserve?"*
+   • *"What are our active chargeback risks?"*
+3. **Indian Gateway Accounting**:
+   • *"How are MDR fees and 18% GST calculated?"*
+   • *"Why is there a weekend settlement lag on nodal accounts?"*
+4. **Remediation & Action**:
+   • *"Draft an escalation email to Razorpay nodal desk"*
+   • *"How do I resolve open exceptions?"*
+   • *"How to export reports to Excel?"*
+5. **Liquidity & Treasury**:
+   • *"What is our projected liquidity over the next 7 days?"*`,
       source: 'RazorOps AI Engine'
     };
   }

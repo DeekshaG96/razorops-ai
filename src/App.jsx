@@ -139,7 +139,9 @@ export default function App() {
       }
     } catch (err) {
       console.error(err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      if (err.code === 'auth/configuration-not-found' || err.message?.includes('configuration-not-found')) {
+        setAuthError('Firebase Auth is not enabled in Firebase Console yet. Click "Enter Live Auditor Session" below to test immediately!');
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setAuthError('Invalid email or password credentials.');
       } else if (err.code === 'auth/email-already-in-use') {
         setAuthError('Email is already registered.');
@@ -153,12 +155,23 @@ export default function App() {
     }
   };
 
+  const handleDemoAccess = () => {
+    setUser({
+      email: 'lead.auditor@razorops.ai',
+      displayName: 'Lead Finance Auditor',
+      uid: 'auditor_demo_lead'
+    });
+    setAuthError('');
+    subscribeToFirestore();
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
     } catch (err) {
       console.error(err);
     }
+    setUser(null);
   };
 
   // Run the multi-agent system simulation and save to Firestore
@@ -470,6 +483,21 @@ These **${exceptions.length} items** could not be auto-resolved by agent rules:\
                   <UserPlus size={16} /> Register Session Credentials
                 </>
               )}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '10px 0', opacity: 0.7 }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+              <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>Quick Evaluation</span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+            </div>
+
+            <button 
+              type="button" 
+              className="btn btn-secondary" 
+              style={{ width: '100%', justifyContent: 'center', padding: '12px', background: 'rgba(0, 229, 255, 0.08)', borderColor: 'var(--neon-cyan)', color: 'var(--neon-cyan)', fontWeight: '600' }}
+              onClick={handleDemoAccess}
+            >
+              <Activity size={16} /> Enter Live Auditor Session (1-Click)
             </button>
           </form>
 

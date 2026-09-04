@@ -120,18 +120,24 @@ export default function RazorpayTopbar({
           <div className="flex items-center space-x-2">
             <div 
               onClick={() => setActiveTab && setActiveTab('login')}
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold cursor-pointer hover:bg-emerald-100 transition-colors"
-              title="Click to manage Merchant Account"
+              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold cursor-pointer hover:bg-emerald-100 transition-colors shadow-2xs"
+              title="Click to view Account / Login status"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="truncate max-w-[120px]">{user.displayName || user.email?.split('@')[0] || 'Auditor'}</span>
+              <span className="truncate max-w-[120px] font-bold">{user.displayName || user.email?.split('@')[0] || 'Auditor'}</span>
             </div>
             <button
-              onClick={onSignOut}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-              title="Sign Out to Login Page"
+              type="button"
+              id="topbar-signout-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSignOut && onSignOut();
+              }}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200/90 hover:border-rose-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+              title="Sign Out of session and return to Login Portal"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         )}

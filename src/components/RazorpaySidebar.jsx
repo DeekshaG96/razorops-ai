@@ -53,7 +53,20 @@ export default function RazorpaySidebar({
       items: [
         { id: 'history', label: 'Batch History', icon: History, badge: null },
         { id: 'settings', label: 'Settings & MDR Rates', icon: Settings, badge: null },
-        { id: 'login', label: user ? 'Account & Sign In' : 'Merchant Sign In', icon: LogIn, badge: user ? 'Active' : 'Portal', badgeColor: user ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200 font-bold' },
+        user ? {
+          id: 'signout_action',
+          label: 'Sign Out Session',
+          icon: LogOut,
+          badge: 'Exit',
+          badgeColor: 'bg-rose-50 text-rose-700 border border-rose-200 font-bold',
+          onClick: onSignOut
+        } : {
+          id: 'login',
+          label: 'Merchant Sign In',
+          icon: LogIn,
+          badge: 'Portal',
+          badgeColor: 'bg-blue-50 text-blue-700 border border-blue-200 font-bold'
+        },
       ]
     }
   ];
@@ -137,19 +150,27 @@ export default function RazorpaySidebar({
                 return (
                   <button
                     key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (item.onClick) {
+                        item.onClick();
+                      } else {
+                        setActiveTab(item.id);
+                      }
                       setMobileOpen(false);
                     }}
                     className={`
-                      w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 group
+                      w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 group cursor-pointer
                       ${isActive 
                         ? 'bg-blue-50 text-blue-600 border border-blue-200/90 shadow-xs font-bold' 
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}
+                        : item.id === 'signout_action'
+                          ? 'text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200/80 font-bold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}
                     `}
                   >
                     <div className="flex items-center space-x-2.5 truncate">
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-600'}`} />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-600' : item.id === 'signout_action' ? 'text-rose-600' : 'text-slate-400 group-hover:text-blue-600'}`} />
                       <span className="truncate">{item.label}</span>
                     </div>
 
@@ -181,28 +202,39 @@ export default function RazorpaySidebar({
 
           {/* User Session */}
           {user ? (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 shadow-xs">
-              <div className="flex items-center space-x-2 truncate">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-[10px] flex items-center justify-center font-bold text-white shadow-xs flex-shrink-0">
+            <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2.5">
+              <div className="flex items-center space-x-2.5 truncate">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs flex items-center justify-center font-bold text-white shadow-xs flex-shrink-0">
                   {user.email ? user.email.charAt(0).toUpperCase() : 'A'}
                 </div>
-                <div className="truncate">
-                  <div className="text-[11px] font-bold text-slate-800 truncate">{user.displayName || user.email || 'Lead Auditor'}</div>
-                  <div className="text-[9px] text-slate-500 truncate">Senior Controller</div>
+                <div className="truncate min-w-0 flex-1">
+                  <div className="text-xs font-bold text-slate-900 truncate">
+                    {user.displayName || user.email || 'Lead Auditor'}
+                  </div>
+                  <div className="text-[10px] text-slate-500 truncate flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                    <span>Senior Controller</span>
+                  </div>
                 </div>
               </div>
               <button
-                onClick={onSignOut}
-                title="Sign Out"
-                className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                type="button"
+                id="sidebar-signout-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSignOut && onSignOut();
+                }}
+                title="Sign Out of Session"
+                className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/90 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:scale-[1.01] active:scale-[0.98]"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                <span>Sign Out</span>
               </button>
             </div>
           ) : (
             <button
               onClick={onAuditorLogin}
-              className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all"
+              className="w-full flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
             >
               <UserCheck className="w-3.5 h-3.5" />
               <span>1-Click Auditor Sign-In</span>

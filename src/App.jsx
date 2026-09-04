@@ -59,7 +59,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
-      if (['studio', 'ledger', 'exceptions', 'forecast', 'copilot', 'history', 'settings'].includes(hash)) {
+      if (['studio', 'ledger', 'exceptions', 'forecast', 'copilot', 'history', 'settings', 'login'].includes(hash)) {
         return hash;
       }
       if (sessionStorage.getItem('razorops_guest_mode') === 'true') {
@@ -278,16 +278,22 @@ export default function App() {
   };
 
   const handleSignOut = async () => {
+    // 1. Immediately reset state and navigation to avoid any hanging UI
+    setUser(null);
+    setAuthError('');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('razorops_guest_mode');
+      localStorage.removeItem('razorops_guest_mode');
+      window.location.hash = 'login';
+    }
+    setActiveTab('login');
+
+    // 2. Perform Firebase Auth signOut asynchronously
     try {
       await signOut(auth);
     } catch (err) {
       console.warn("Sign out err:", err);
     }
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('razorops_guest_mode');
-    }
-    setUser(null);
-    setActiveTab('login');
   };
 
   // File Upload Handler
@@ -489,6 +495,8 @@ export default function App() {
   if (activeTab === 'login') {
     return (
       <LoginPage
+        user={user}
+        onSignOut={handleSignOut}
         onAuditorLogin={() => {
           handleAuditorLogin();
         }}

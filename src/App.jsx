@@ -50,11 +50,13 @@ import LiquidityForecastView from './components/LiquidityForecastView';
 import CopilotChatView from './components/CopilotChatView';
 import HistoricalBatchesView from './components/HistoricalBatchesView';
 import SettingsHub from './components/SettingsHub';
+import AuthModal from './components/AuthModal';
 
 export default function App() {
   // Navigation & Layout
   const [activeTab, setActiveTab] = useState('studio');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Auth state
   const [user, setUser] = useState(null);
@@ -184,23 +186,19 @@ export default function App() {
   }, []);
 
   // Auth Handlers
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    if (!authEmail.trim() || !authPassword.trim()) {
-      setAuthError('Email and password are required.');
-      return;
-    }
+  const handleEmailAuth = async (email, password, isSignUp) => {
     setAuthLoading(true);
     setAuthError('');
     try {
-      if (authMode === 'login') {
-        await signInWithEmailAndPassword(auth, authEmail, authPassword);
+      if (!isSignUp) {
+        await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+        await createUserWithEmailAndPassword(auth, email, password);
       }
+      setIsAuthModalOpen(false);
     } catch (err) {
       if (err.code === 'auth/configuration-not-found') {
-        setAuthError('Firebase Auth is in sandbox mode. Click "Enter Live Auditor Session" to test immediately!');
+        setAuthError('Firebase Auth email provider is in sandbox. Use "1-Click Live Auditor Sign In" above!');
       } else if (err.code === 'auth/invalid-credential') {
         setAuthError('Invalid email or password.');
       } else {
@@ -219,6 +217,7 @@ export default function App() {
       photoURL: null
     });
     setAuthError('');
+    setIsAuthModalOpen(false);
     subscribeToFirestore();
     fetchHistoricalBatches();
   };
@@ -457,7 +456,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         user={user}
         onSignOut={handleSignOut}
-        onAuditorLogin={handleAuditorLogin}
+        onAuditorLogin={() => setIsAuthModalOpen(true)}
         firestoreSynced={firestoreSynced}
         unresolvedCount={dbData?.metrics?.unresolvedCount || dbData?.exceptions?.length || 0}
         mobileOpen={mobileOpen}
@@ -474,7 +473,7 @@ export default function App() {
           onRunEngine={handleRunEngine}
           isRunning={isRunning}
           user={user}
-          onAuditorLogin={handleAuditorLogin}
+          onAuditorLogin={() => setIsAuthModalOpen(true)}
           unresolvedCount={dbData?.metrics?.unresolvedCount || dbData?.exceptions?.length || 0}
         />
 
@@ -496,10 +495,11 @@ export default function App() {
 
               <div className="flex items-center space-x-2 w-full sm:w-auto flex-shrink-0">
                 <button
-                  onClick={handleAuditorLogin}
-                  className="w-full sm:w-auto px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap transition-all"
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="w-full sm:w-auto px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap transition-all flex items-center space-x-1.5"
                 >
-                  1-Click Auditor Session
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In / Auditor Login</span>
                 </button>
                 <button
                   onClick={handleGoogleSignIn}
@@ -518,7 +518,7 @@ export default function App() {
               setMode={setIngestionMode}
               onRunEngine={handleRunEngine}
               isRunning={isRunning}
-              metrics={dbData?.metrics}
+              metrics={dbData?.metrics || {}}
               simulatedLogs={simulatedLogs}
               terminalEndRef={terminalEndRef}
               uploadedFiles={uploadedFiles}
@@ -609,6 +609,17 @@ export default function App() {
         </footer>
 
       </div>
+
+      {/* Razorpay Authentic Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuditorLogin={handleAuditorLogin}
+        onGoogleSignIn={handleGoogleSignIn}
+        onEmailAuth={handleEmailAuth}
+        authError={authError}
+        authLoading={authLoading}
+      />
 
     </div>
   );

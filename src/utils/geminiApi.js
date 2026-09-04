@@ -26,9 +26,20 @@ export async function askSettlementCopilot(query, contextData, apiKey = null, op
     };
   }
 
-  // Detect which keys are available (support sk-... auto-detection)
-  const resolvedOpenAIKey = (openaiKey || (apiKey && apiKey.startsWith('sk-') ? apiKey : null) || (typeof window !== 'undefined' && localStorage.getItem('razorops_openai_api_key')) || '').trim();
-  const resolvedGeminiKey = ((!apiKey || apiKey.startsWith('sk-')) ? (typeof window !== 'undefined' && localStorage.getItem('razorops_gemini_api_key')) : apiKey || '').trim();
+  // Detect which keys are available (supports env vars, sk-... auto-detection, and local storage)
+  const resolvedOpenAIKey = (
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY) ||
+    openaiKey || 
+    (apiKey && apiKey.startsWith('sk-') ? apiKey : null) || 
+    (typeof window !== 'undefined' && localStorage.getItem('razorops_openai_api_key')) || 
+    ''
+  ).trim();
+
+  const resolvedGeminiKey = (
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) ||
+    ((!apiKey || apiKey.startsWith('sk-')) ? (typeof window !== 'undefined' && localStorage.getItem('razorops_gemini_api_key')) : apiKey || '') || 
+    ''
+  ).trim();
 
   const contextSummary = `
 Current Reconciled Batch Metrics:

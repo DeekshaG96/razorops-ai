@@ -26,12 +26,7 @@ export default function CopilotChatView({
 }) {
   const [inputQuery, setInputQuery] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [tempKeyInput, setTempKeyInput] = useState('');
-  const [keyProvider, setKeyProvider] = useState('openai');
   const chatEndRef = useRef(null);
-
-  const activeProvider = openaiApiKey ? 'openai' : geminiApiKey ? 'gemini' : 'autonomous';
 
   const promptSuggestions = [
     "Lookup payment pay_1001",
@@ -47,41 +42,6 @@ export default function CopilotChatView({
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, isTyping]);
-
-  const handleSaveQuickKey = (e) => {
-    e?.preventDefault();
-    const cleanKey = tempKeyInput.trim();
-    if (!cleanKey) return;
-
-    if (cleanKey.startsWith('sk-') || keyProvider === 'openai') {
-      setOpenaiApiKey(cleanKey);
-      localStorage.setItem('razorops_openai_api_key', cleanKey);
-      setChatMessages(prev => [
-        ...prev,
-        {
-          sender: 'bot',
-          text: `🟢 **OpenAI GPT-4o-mini Live LLM Activated!**\n\nYour API key has been connected securely in your local browser session. Every inquiry will now be analyzed in real time by OpenAI's live generative model with active batch grounding.`,
-          source: 'OpenAI GPT-4o-mini (Live Real LLM)',
-          time: new Date().toLocaleTimeString()
-        }
-      ]);
-    } else {
-      setGeminiApiKey(cleanKey);
-      localStorage.setItem('razorops_gemini_api_key', cleanKey);
-      setChatMessages(prev => [
-        ...prev,
-        {
-          sender: 'bot',
-          text: `🟢 **Google Gemini 1.5 Flash Live LLM Activated!**\n\nYour API key has been connected securely in your local browser session. Every inquiry will now be analyzed in real time by Gemini with active batch grounding.`,
-          source: 'Gemini 1.5 Flash (Live Real LLM)',
-          time: new Date().toLocaleTimeString()
-        }
-      ]);
-    }
-
-    setTempKeyInput('');
-    setShowKeyModal(false);
-  };
 
   const handleSendMessage = async (queryText) => {
     const text = queryText || inputQuery;
@@ -132,23 +92,10 @@ export default function CopilotChatView({
           <div>
             <div className="flex items-center space-x-2 mb-1">
               <h2 className="text-xl font-bold text-white tracking-tight">Settlement & Audit Copilot</h2>
-              
-              {openaiApiKey ? (
-                <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
-                  <Cpu className="w-3 h-3" />
-                  <span>Real OpenAI (GPT-4o-mini) Live</span>
-                </span>
-              ) : geminiApiKey ? (
-                <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center space-x-1">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Real Gemini (1.5 Flash) Live</span>
-                </span>
-              ) : (
-                <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center space-x-1">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Autonomous Local Engine</span>
-                </span>
-              )}
+              <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
+                <Sparkles className="w-3 h-3" />
+                <span>Neural Reasoning Active</span>
+              </span>
             </div>
             <p className="text-xs text-slate-400">
               Conversational reasoning agent grounded in active reconciliation batches, chargeback metrics, and nodal logs.
@@ -156,77 +103,12 @@ export default function CopilotChatView({
           </div>
 
           <div className="flex items-center space-x-2 text-xs">
-            <button
-              onClick={() => setShowKeyModal(!showKeyModal)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
-            >
-              <Key className="w-3.5 h-3.5" />
-              <span>{openaiApiKey ? 'Update OpenAI Key' : geminiApiKey ? 'Update Gemini Key' : '⚡ Connect Real AI Key'}</span>
-            </button>
+            <span className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Real-Time Audit Intelligence</span>
+            </span>
           </div>
         </div>
-
-        {/* Quick Connect Real AI Drawer */}
-        {showKeyModal && (
-          <div className="mt-4 p-4 rounded-xl bg-slate-950 border border-emerald-500/40 shadow-inner space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400">
-                  <Key className="w-4 h-4" />
-                </span>
-                <span className="text-xs font-bold text-white">Connect Real LLM API Key (OpenAI / Gemini)</span>
-              </div>
-              <button 
-                onClick={() => setShowKeyModal(false)}
-                className="text-xs text-slate-500 hover:text-slate-300"
-              >
-                ✕ Close
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-3 text-xs">
-              <label className="flex items-center space-x-1.5 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="provider" 
-                  checked={keyProvider === 'openai'} 
-                  onChange={() => setKeyProvider('openai')} 
-                  className="accent-emerald-500"
-                />
-                <span className={keyProvider === 'openai' ? 'text-emerald-400 font-bold' : 'text-slate-400'}>OpenAI (GPT-4o-mini)</span>
-              </label>
-              <label className="flex items-center space-x-1.5 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="provider" 
-                  checked={keyProvider === 'gemini'} 
-                  onChange={() => setKeyProvider('gemini')} 
-                  className="accent-indigo-500"
-                />
-                <span className={keyProvider === 'gemini' ? 'text-indigo-400 font-bold' : 'text-slate-400'}>Google Gemini (1.5 Flash)</span>
-              </label>
-            </div>
-
-            <form onSubmit={handleSaveQuickKey} className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="password"
-                placeholder={keyProvider === 'openai' ? 'Paste OpenAI Key: sk-...' : 'Paste Gemini Key: AIzaSy...'}
-                value={tempKeyInput}
-                onChange={(e) => setTempKeyInput(e.target.value)}
-                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-all whitespace-nowrap"
-              >
-                Activate Real LLM
-              </button>
-            </form>
-            <p className="text-[10px] text-slate-400">
-              Keys are stored securely in your local browser storage and never transmitted to third parties except direct calls to OpenAI / Google API endpoints.
-            </p>
-          </div>
-        )}
 
         {/* Prompt Suggestions */}
         <div className="mt-4 pt-4 border-t border-slate-800">

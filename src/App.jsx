@@ -436,12 +436,12 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#070d1e] text-slate-100 font-sans flex antialiased selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#f4f7fb] text-slate-800 font-sans flex antialiased selection:bg-blue-600 selection:text-white">
       
       {/* Ambient background glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 left-1/4 w-[650px] h-[650px] bg-blue-600/[0.05] rounded-full blur-[140px]" />
-        <div className="absolute top-1/2 -right-40 w-[550px] h-[550px] bg-indigo-600/[0.04] rounded-full blur-[140px]" />
+        <div className="absolute -top-40 left-1/4 w-[650px] h-[650px] bg-blue-400/[0.06] rounded-full blur-[140px]" />
+        <div className="absolute top-1/2 -right-40 w-[550px] h-[550px] bg-sky-300/[0.06] rounded-full blur-[140px]" />
       </div>
 
       {/* Razorpay Left Sidebar */}
@@ -476,27 +476,27 @@ export default function App() {
           
           {/* Sleek Evaluator Notice (if not logged in) */}
           {!user && (
-            <div className="bg-slate-900/70 border border-blue-500/25 rounded-2xl px-5 py-3 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 backdrop-blur-md">
+            <div className="bg-blue-50/90 border border-blue-200/90 rounded-2xl px-5 py-3 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 backdrop-blur-md">
               <div className="flex items-center space-x-3 text-xs">
-                <div className="p-1.5 rounded-xl bg-blue-500/15 text-blue-400 flex-shrink-0">
+                <div className="p-1.5 rounded-xl bg-blue-100 text-blue-700 flex-shrink-0">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-bold text-white tracking-tight mr-1.5">Evaluator Sandbox Session:</span>
-                  <span className="text-slate-400">Previewing Razorpay Track 4 Multi-Agent Pipeline with live execution privileges.</span>
+                  <span className="font-bold text-blue-950 tracking-tight mr-1.5">Evaluator Sandbox Session:</span>
+                  <span className="text-slate-600">Previewing Razorpay Track 4 Multi-Agent Pipeline with live execution privileges.</span>
                 </div>
               </div>
 
               <div className="flex items-center space-x-2 w-full sm:w-auto flex-shrink-0">
                 <button
                   onClick={handleAuditorLogin}
-                  className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 whitespace-nowrap transition-all ring-1 ring-white/10"
+                  className="w-full sm:w-auto px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap transition-all"
                 >
                   1-Click Auditor Session
                 </button>
                 <button
                   onClick={handleGoogleSignIn}
-                  className="w-full sm:w-auto px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors"
+                  className="w-full sm:w-auto px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors shadow-xs"
                 >
                   Google Sign In
                 </button>
@@ -588,12 +588,12 @@ export default function App() {
         </main>
 
         {/* Razorpay Minimalist Footer */}
-        <footer className="border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500 bg-[#070d1e]/80 mt-auto">
+        <footer className="border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-500 bg-white mt-auto">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center space-x-2 text-[11px]">
-              <span className="font-bold text-slate-300">Razorpay OpsAI</span>
+              <span className="font-bold text-slate-700">Razorpay OpsAI</span>
               <span>•</span>
-              <span>Autonomous 3-Way Reconciliation & Liquidity Copilot</span>
+              <span className="text-slate-500">Autonomous 3-Way Reconciliation & Liquidity Copilot</span>
             </div>
             <div className="text-[10.5px] text-slate-400">
               Razorpay Hackathon Track 4 • Powered by Multi-Agent Architecture & Google Gemini 2.5 Flash

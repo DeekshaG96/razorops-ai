@@ -2,41 +2,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-main: #060913;
-  --bg-card: rgba(17, 24, 39, 0.7);
-  --bg-card-hover: rgba(26, 36, 57, 0.85);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-glow: rgba(0, 41, 255, 0.3);
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border-color: rgba(226, 232, 240, 0.9);
+  --border-color-glow: rgba(12, 140, 233, 0.3);
   
   /* Brand colors */
-  --razor-blue: #0029ff;
-  --razor-blue-glow: rgba(0, 41, 255, 0.5);
-  --neon-cyan: #00f2fe;
-  --neon-cyan-glow: rgba(0, 242, 254, 0.4);
-  --neon-purple: #a855f7;
+  --razor-blue: #0c8ce9;
+  --razor-blue-glow: rgba(12, 140, 233, 0.4);
+  --neon-cyan: #00b4d8;
+  --neon-cyan-glow: rgba(0, 180, 216, 0.3);
+  --neon-purple: #7c3aed;
   
   /* Status Colors */
-  --color-success: #10b981;
-  --color-success-bg: rgba(16, 185, 129, 0.1);
-  --color-success-border: rgba(16, 185, 129, 0.2);
+  --color-success: #059669;
+  --color-success-bg: rgba(5, 150, 105, 0.08);
+  --color-success-border: rgba(5, 150, 105, 0.2);
   
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-warning-border: rgba(245, 158, 11, 0.2);
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-warning-border: rgba(217, 119, 6, 0.2);
   
-  --color-error: #ef4444;
-  --color-error-bg: rgba(239, 68, 68, 0.1);
-  --color-error-border: rgba(239, 68, 68, 0.2);
+  --color-error: #dc2626;
+  --color-error-bg: rgba(220, 38, 38, 0.08);
+  --color-error-border: rgba(220, 38, 38, 0.2);
   
-  --color-info: #3b82f6;
-  --color-info-bg: rgba(59, 130, 246, 0.1);
-  --color-info-border: rgba(59, 130, 246, 0.2);
+  --color-info: #0284c7;
+  --color-info-bg: rgba(2, 132, 199, 0.08);
+  --color-info-border: rgba(2, 132, 199, 0.2);
 
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', 'Outfit', sans-serif;
   --font-mono: 'Fira Code', monospace;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -47,13 +47,13 @@
 
 body {
   background-color: var(--bg-main);
-  color: #f3f4f6;
+  color: #0f172a;
   font-family: var(--font-sans);
   overflow-x: hidden;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(0, 41, 255, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 10% 10%, rgba(12, 140, 233, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(0, 180, 216, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(219, 234, 254, 0.4) 0%, transparent 60%);
   background-attachment: fixed;
   min-height: 100vh;
 }

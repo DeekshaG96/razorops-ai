@@ -87,26 +87,26 @@ export default function ExceptionsDesk({
     <div className="space-y-6">
       
       {/* Header */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 mb-1">
-              <h2 className="text-xl font-bold text-white tracking-tight">Honest Exceptions & Dispute Desk</h2>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">Honest Exceptions & Dispute Desk</h2>
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                 HITL Remediation
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Interactive Human-In-The-Loop resolver for isolated discrepancies, dispute holds, and bank cutoff lags.
             </p>
           </div>
 
           <div className="flex items-center space-x-3 text-xs">
-            <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
-              Active Exceptions: <span className="font-bold text-rose-400">{exceptions.length}</span>
+            <div className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+              Active Exceptions: <span className="font-bold text-rose-600">{exceptions.length}</span>
             </div>
-            <div className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
-              Resolved in Session: <span className="font-bold text-emerald-400">{Object.keys(resolvedExceptionIds).length}</span>
+            <div className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+              Resolved in Session: <span className="font-bold text-emerald-600">{Object.keys(resolvedExceptionIds).length}</span>
             </div>
           </div>
         </div>
@@ -115,9 +115,9 @@ export default function ExceptionsDesk({
       {/* Exception Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {exceptions.length === 0 ? (
-          <div className="col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-white mb-1">Zero Open Exceptions</h3>
+          <div className="col-span-2 bg-white border border-slate-200/90 rounded-2xl p-12 text-center text-slate-500 shadow-xs">
+            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-slate-900 mb-1">Zero Open Exceptions</h3>
             <p className="text-xs text-slate-500">
               All transactions in this batch have successfully reconciled against bank and ERP records.
             </p>
@@ -133,12 +133,12 @@ export default function ExceptionsDesk({
                 key={idx}
                 className={`rounded-2xl border p-5 transition-all relative overflow-hidden ${
                   isResolved
-                    ? 'bg-slate-900/40 border-emerald-500/30 shadow-sm'
-                    : 'bg-slate-900/90 border-slate-800 hover:border-slate-700 shadow-xl'
+                    ? 'bg-slate-50/70 border-emerald-300 shadow-xs'
+                    : 'bg-white border-slate-200/90 hover:border-blue-300 hover:shadow-md shadow-xs'
                 }`}
               >
                 {isResolved && (
-                  <div className="absolute top-0 right-0 bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-bl-lg">
+                  <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-0.5 rounded-bl-lg">
                     Dispatched to Nodal Desk
                   </div>
                 )}
@@ -146,18 +146,18 @@ export default function ExceptionsDesk({
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2.5 rounded-xl ${
-                      isResolved ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                      isResolved ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
                     }`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-white text-sm">{txId}</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+                        <span className="font-mono font-bold text-slate-900 text-sm">{txId}</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">
                           ₹{exc.amount ? exc.amount.toLocaleString() : (exc.payment?.amount || 0).toLocaleString()}
                         </span>
                       </div>
-                      <span className="text-[11px] font-semibold text-rose-400/90 block mt-0.5">
+                      <span className="text-[11px] font-semibold text-rose-600 block mt-0.5">
                         {exc.reasonCode || exc.reason || 'LEDGER_MISMATCH'}
                       </span>
                     </div>
@@ -165,18 +165,18 @@ export default function ExceptionsDesk({
                 </div>
 
                 {/* Root Cause Note */}
-                <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80 mb-4 text-xs">
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 mb-4 text-xs">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
                     AI Root Cause Analysis
                   </span>
-                  <p className="text-slate-300 leading-relaxed">
+                  <p className="text-slate-700 leading-relaxed font-sans">
                     {exc.rootCause || exc.explanation || 'Discrepancy detected during multi-way matching checks.'}
                   </p>
                 </div>
 
                 {/* Action CTA */}
                 <div className="flex items-center justify-between pt-2">
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-500">
                     {isResolved ? 'Audit Signed & Logged' : 'Requires Auditor Action'}
                   </span>
 
@@ -185,8 +185,8 @@ export default function ExceptionsDesk({
                     disabled={isResolved}
                     className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isResolved
-                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20'
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm'
                     }`}
                   >
                     <ShieldCheck className="w-4 h-4" />
@@ -201,23 +201,23 @@ export default function ExceptionsDesk({
 
       {/* Interactive HITL Resolution Modal */}
       {activeMemo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-xl w-full p-6 shadow-2xl overflow-hidden relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full p-6 shadow-2xl overflow-hidden relative">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center space-x-2.5">
-                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+                <div className="p-2 rounded-lg bg-blue-50 text-blue-600 border border-blue-100">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">Signed Audit Resolution Memo</h3>
-                  <p className="text-[11px] text-slate-400 font-mono">Ref: {activeMemo.memoId}</p>
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">Signed Audit Resolution Memo</h3>
+                  <p className="text-[11px] text-slate-500 font-mono">Ref: {activeMemo.memoId}</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveMemo(null)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -227,82 +227,82 @@ export default function ExceptionsDesk({
             <div className="py-4 space-y-4 text-xs font-mono">
               
               {/* Hash Header */}
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
                   <span>SHA-256 AUDIT INTEGRITY SIGNATURE</span>
-                  <span className="text-emerald-400 font-bold">VERIFIED</span>
+                  <span className="text-emerald-600 font-bold">VERIFIED</span>
                 </div>
-                <div className="text-[11px] text-cyan-400 break-all select-all font-semibold">
+                <div className="text-[11px] text-blue-600 break-all select-all font-semibold">
                   {activeMemo.signatureHash}
                 </div>
               </div>
 
               {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-[11px]">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px]">
                 <div>
                   <span className="text-slate-500 block text-[10px]">Payment ID:</span>
-                  <span className="text-white font-bold">{activeMemo.paymentId}</span>
+                  <span className="text-slate-900 font-bold">{activeMemo.paymentId}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px]">Impact Amount:</span>
-                  <span className="text-emerald-400 font-bold">₹{activeMemo.amount?.toLocaleString()}</span>
+                  <span className="text-emerald-600 font-bold">₹{activeMemo.amount?.toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px]">Reason Code:</span>
-                  <span className="text-rose-400 font-bold">{activeMemo.reasonCode}</span>
+                  <span className="text-rose-600 font-bold">{activeMemo.reasonCode}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px]">Timestamp (UTC):</span>
-                  <span className="text-slate-300">{new Date(activeMemo.timestamp).toLocaleString()}</span>
+                  <span className="text-slate-700">{new Date(activeMemo.timestamp).toLocaleString()}</span>
                 </div>
               </div>
 
               {/* Remedial Accounting Journal Entry */}
-              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-2">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-600 block mb-2">
                   Remedial Accounting Journal Entry
                 </span>
                 <div className="space-y-1.5 text-[11px]">
-                  <div className="flex items-center justify-between text-slate-300">
+                  <div className="flex items-center justify-between text-slate-700">
                     <span>DR: {activeMemo.journalEntry?.debit}</span>
-                    <span className="text-emerald-400 font-semibold">+₹{activeMemo.amount?.toLocaleString()}</span>
+                    <span className="text-emerald-600 font-semibold">+₹{activeMemo.amount?.toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center justify-between text-slate-300">
+                  <div className="flex items-center justify-between text-slate-700">
                     <span>CR: {activeMemo.journalEntry?.credit}</span>
-                    <span className="text-rose-400 font-semibold">-₹{activeMemo.amount?.toLocaleString()}</span>
+                    <span className="text-rose-600 font-semibold">-₹{activeMemo.amount?.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
               {/* Dispatch Action */}
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px] leading-relaxed">
-                <span className="font-bold block text-blue-200 mb-0.5">Automated Action Dispatch:</span>
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-[11px] leading-relaxed">
+                <span className="font-bold block text-blue-800 mb-0.5">Automated Action Dispatch:</span>
                 {activeMemo.actionNote}
               </div>
 
             </div>
 
             {/* Modal Actions */}
-            <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
               <button
                 onClick={() => exportAuditMemoText(activeMemo)}
-                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700"
+                className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
               >
-                <Download className="w-3.5 h-3.5 text-cyan-400" />
+                <Download className="w-3.5 h-3.5 text-blue-600" />
                 <span>Download Memo (.txt)</span>
               </button>
 
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setActiveMemo(null)}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => handleConfirmDispatch(activeMemo)}
                   disabled={resolvingId === activeMemo.paymentId}
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20"
+                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{resolvingId === activeMemo.paymentId ? 'Dispatching...' : 'Dispatch to Nodal Desk'}</span>

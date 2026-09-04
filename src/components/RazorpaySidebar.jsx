@@ -44,7 +44,7 @@ export default function RazorpaySidebar({
     {
       group: 'INTELLIGENCE',
       items: [
-        { id: 'copilot', label: 'Ray AI Copilot', icon: Bot, badge: 'Gemini', badgeColor: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm' },
+        { id: 'copilot', label: 'Ray AI Copilot', icon: Bot, badge: 'Gemini', badgeColor: 'bg-blue-100 text-blue-700 border border-blue-200 font-semibold' },
       ]
     },
     {
@@ -61,18 +61,18 @@ export default function RazorpaySidebar({
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
       <aside className={`
-        fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-[#0a1128] border-r border-slate-800/80 flex flex-col justify-between transition-transform duration-200 ease-in-out
+        fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-white border-r border-slate-200/90 flex flex-col justify-between transition-transform duration-200 ease-in-out shadow-xs
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Top Branding */}
-        <div className="p-5 border-b border-slate-800/80">
+        <div className="p-5 border-b border-slate-100">
           <div className="flex items-center justify-between">
             <div 
               className="flex items-center space-x-3 cursor-pointer group"
@@ -82,41 +82,41 @@ export default function RazorpaySidebar({
               }}
             >
               {/* Razorpay Signature Angled Lightning Glyph */}
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 via-blue-500 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 ring-1 ring-white/20 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 via-blue-500 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 ring-1 ring-white/30 group-hover:scale-105 transition-transform">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M13.976 1.488l-9.952 14.02a.8.8 0 00.655 1.264h6.059l-2.714 5.74a.8.8 0 001.378.756l9.952-14.02a.8.8 0 00-.655-1.264h-6.059l2.714-5.74a.8.8 0 00-1.378-.756z" />
                 </svg>
               </div>
               <div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="font-black text-white text-lg tracking-tight font-sans">Razorpay</span>
-                  <span className="px-1.5 py-0.2 rounded-md bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold border border-blue-500/30">
+                  <span className="font-black text-[#0c2340] text-lg tracking-tight font-sans">Razorpay</span>
+                  <span className="px-1.5 py-0.2 rounded-md bg-blue-50 text-blue-600 text-[10px] font-mono font-bold border border-blue-200">
                     OpsAI
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">Track 4 Autonomous Audit</p>
+                <p className="text-[10px] text-slate-500 font-medium">Track 4 Autonomous Audit</p>
               </div>
             </div>
 
             {/* Mobile Close Button */}
             <button 
               onClick={() => setMobileOpen(false)}
-              className="lg:hidden p-1 text-slate-400 hover:text-white"
+              className="lg:hidden p-1 text-slate-400 hover:text-slate-700"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Merchant Account Pill */}
-          <div className="mt-4 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
+          <div className="mt-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <div className="flex flex-col">
-                <span className="font-mono text-[11px] font-semibold text-slate-200">MID_RZP_TRACK4</span>
+                <span className="font-mono text-[11px] font-bold text-slate-800">MID_RZP_TRACK4</span>
                 <span className="text-[9px] text-slate-500 uppercase tracking-wider">Automated Settlement</span>
               </div>
             </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold">
               LIVE
             </span>
           </div>
@@ -142,17 +142,17 @@ export default function RazorpaySidebar({
                     className={`
                       w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 group
                       ${isActive 
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-1 ring-white/10' 
-                        : 'text-slate-300 hover:text-white hover:bg-slate-900/80'}
+                        ? 'bg-blue-50 text-blue-600 border border-blue-200/90 shadow-xs font-bold' 
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}
                     `}
                   >
                     <div className="flex items-center space-x-2.5 truncate">
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'}`} />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-600'}`} />
                       <span className="truncate">{item.label}</span>
                     </div>
 
                     {item.badge && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full flex-shrink-0 ${item.badgeColor || 'bg-slate-800'}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full flex-shrink-0 ${item.badgeColor || 'bg-slate-100 text-slate-600'}`}>
                         {item.badge}
                       </span>
                     )}
@@ -164,35 +164,35 @@ export default function RazorpaySidebar({
         </div>
 
         {/* Sidebar Footer: User / Auditor Session */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/60 space-y-2">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/70 space-y-2.5">
           {/* Cloud Firestore Indicator */}
-          <div className="flex items-center justify-between px-2 text-[11px] text-slate-400 font-medium">
+          <div className="flex items-center justify-between px-2 text-[11px] text-slate-500 font-medium">
             <span className="flex items-center space-x-1.5">
-              <Database className="w-3.5 h-3.5 text-blue-400" />
+              <Database className="w-3.5 h-3.5 text-blue-600" />
               <span>Cloud Sync</span>
             </span>
-            <span className={`flex items-center space-x-1 ${firestoreSynced ? 'text-emerald-400' : 'text-amber-400'}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${firestoreSynced ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            <span className={`flex items-center space-x-1 font-semibold ${firestoreSynced ? 'text-emerald-600' : 'text-blue-600'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${firestoreSynced ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
               <span>{firestoreSynced ? 'Connected' : 'Local Ready'}</span>
             </span>
           </div>
 
           {/* User Session */}
           {user ? (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 shadow-xs">
               <div className="flex items-center space-x-2 truncate">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-[10px] flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-[10px] flex items-center justify-center font-bold text-white shadow-xs flex-shrink-0">
                   {user.email ? user.email.charAt(0).toUpperCase() : 'A'}
                 </div>
                 <div className="truncate">
-                  <div className="text-[11px] font-semibold text-white truncate">{user.displayName || user.email || 'Lead Auditor'}</div>
-                  <div className="text-[9px] text-slate-400 truncate">Senior Controller</div>
+                  <div className="text-[11px] font-bold text-slate-800 truncate">{user.displayName || user.email || 'Lead Auditor'}</div>
+                  <div className="text-[9px] text-slate-500 truncate">Senior Controller</div>
                 </div>
               </div>
               <button
                 onClick={onSignOut}
                 title="Sign Out"
-                className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>
@@ -200,7 +200,7 @@ export default function RazorpaySidebar({
           ) : (
             <button
               onClick={onAuditorLogin}
-              className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all ring-1 ring-white/10"
+              className="w-full flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all"
             >
               <UserCheck className="w-3.5 h-3.5" />
               <span>1-Click Auditor Sign-In</span>

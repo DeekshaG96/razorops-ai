@@ -91,6 +91,28 @@ export const disputeAgent = {
       }
     });
 
+    // High-value and fraud reason signals
+    disputes.forEach(disp => {
+      if (disp.amount >= 20000) {
+        addLog(disp.id, `Risk Flag: Dispute ${disp.id} amount ₹${disp.amount} exceeds high-severity threshold of ₹20,000.`, 'warn');
+        analysis.riskSignals.push({
+          type: 'High-Value Dispute Exposure',
+          description: `Dispute amount of ₹${disp.amount.toLocaleString()} on payment ${disp.payment_id} requires priority defense.`,
+          severity: 'high',
+          identifier: disp.payment_id
+        });
+      }
+      if (disp.reason === 'Fraudulent charge') {
+        addLog(disp.id, `Fraud Flag: Claim ${disp.id} filed under 'Fraudulent charge'. Immediate card-level block required.`, 'error');
+        analysis.riskSignals.push({
+          type: 'Suspected Stolen Card Fraud',
+          description: `Issuer chargeback code indicates stolen card / unauthorized transaction on payment ${disp.payment_id}.`,
+          severity: 'high',
+          identifier: disp.payment_id
+        });
+      }
+    });
+
     Object.entries(methodCounts).forEach(([method, count]) => {
       if (count > disputes.length * 0.7 && disputes.length > 2) {
         addLog(null, `Trend Flag: ${count} of disputes are concentrated on ${method} transactions.`, 'info');

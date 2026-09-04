@@ -78,7 +78,10 @@ export const forecasterAgent = {
       const hourOfDay = payDate.getUTCHours(); // UTC hours
 
       // Rules for Nodal Settlement Cycles (T+2 business days)
-      if (dayOfWeek === 5) { // Friday
+      if (dayOfWeek === 4) { // Thursday
+        // T+2 business days lands on Monday (skipping Sat & Sun)
+        estimatedSettleDate.setDate(payDate.getDate() + 4);
+      } else if (dayOfWeek === 5) { // Friday
         // Settles Tuesday (T+4 calendar days, weekend skip)
         estimatedSettleDate.setDate(payDate.getDate() + 4);
       } else if (dayOfWeek === 6) { // Saturday
@@ -96,6 +99,13 @@ export const forecasterAgent = {
       } else {
         // Standard T+2
         estimatedSettleDate.setDate(payDate.getDate() + 2);
+      }
+
+      // Strict banking calendar enforcement: settlements NEVER land on Saturday (6) or Sunday (0)
+      if (estimatedSettleDate.getUTCDay() === 6) {
+        estimatedSettleDate.setDate(estimatedSettleDate.getDate() + 2); // Roll Saturday to Monday
+      } else if (estimatedSettleDate.getUTCDay() === 0) {
+        estimatedSettleDate.setDate(estimatedSettleDate.getDate() + 1); // Roll Sunday to Monday
       }
 
       const estStr = estimatedSettleDate.toISOString().split('T')[0];
@@ -155,6 +165,7 @@ export const forecasterAgent = {
 
     return {
       projections,
+      endingBalance: currentBalance,
       logs
     };
   }

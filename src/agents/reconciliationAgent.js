@@ -244,7 +244,7 @@ export const reconciliationAgent = {
       const daysDiff = msDiff / (1000 * 60 * 60 * 24);
 
       // Check if Sunday transaction and settled Wednesday (cutoff lag)
-      if (payDate.getUTCDay() === 0 && payDate.getUTCHours() >= 18 && daysDiff > 2.5) { // Sunday late night (past 11:30 PM IST / 6 PM UTC)
+      if (payDate.getUTCDay() === 0 && payDate.getUTCHours() >= 18 && daysDiff >= 1.8) { // Sunday late night (past 11:30 PM IST / 6 PM UTC)
         addLog(txId, `Timing Cutoff: Late Sunday transaction settled on Wednesday (T+3). Nodal cutoff applied. Resolved.`, 'info');
         results.push({
           payment,

@@ -14,7 +14,8 @@ import {
   Lock, 
   Eye, 
   EyeOff,
-  Radio
+  Radio,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function SettingsHub({
@@ -84,12 +85,17 @@ export default function SettingsHub({
       if (res.ok) {
         setTestOpenaiStatus('success');
       } else {
-        setTestOpenaiStatus('failed');
+        const errJson = await res.json().catch(() => ({}));
+        if (res.status === 429 || errJson.error?.code === 'credit_balance_exhausted' || errJson.error?.type === 'insufficient_quota') {
+          setTestOpenaiStatus('quota_exhausted');
+        } else {
+          setTestOpenaiStatus('failed');
+        }
       }
     } catch (err) {
       setTestOpenaiStatus('failed');
     }
-    setTimeout(() => setTestOpenaiStatus(null), 4000);
+    setTimeout(() => setTestOpenaiStatus(null), 5000);
   };
 
   const handleTestGemini = async () => {
@@ -101,16 +107,28 @@ export default function SettingsHub({
 
     setTestGeminiStatus('testing');
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(geminiApiKey.trim())}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Hello, respond with OK.' }] }]
-        })
-      });
+      let isSuccess = false;
+      for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiApiKey.trim())}`;
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: 'Hello, respond with OK.' }] }]
+            })
+          });
 
-      if (res.ok) {
+          if (res.ok) {
+            isSuccess = true;
+            break;
+          }
+        } catch (e) {
+          // continue to next model
+        }
+      }
+
+      if (isSuccess) {
         setTestGeminiStatus('success');
       } else {
         setTestGeminiStatus('failed');
@@ -356,6 +374,13 @@ export default function SettingsHub({
                 <span className="text-emerald-400 text-[11px] font-semibold flex items-center space-x-1">
                   <Check className="w-3.5 h-3.5" />
                   <span>OpenAI Connected!</span>
+                </span>
+              )}
+
+              {testOpenaiStatus === 'quota_exhausted' && (
+                <span className="text-amber-400 text-[10px] font-semibold flex items-center space-x-1" title="OpenAI credit balance exhausted (0 credits). Add billing at platform.openai.com or switch to Gemini.">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>0 Balance (Use Gemini)</span>
                 </span>
               )}
 

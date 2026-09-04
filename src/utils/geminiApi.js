@@ -28,16 +28,18 @@ export async function askSettlementCopilot(query, contextData, apiKey = null, op
 
   // Detect which keys are available (supports env vars, sk-... auto-detection, and local storage)
   const resolvedOpenAIKey = (
-    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY) ||
-    openaiKey || 
+    (openaiKey && openaiKey.startsWith('sk-') ? openaiKey : null) || 
     (apiKey && apiKey.startsWith('sk-') ? apiKey : null) || 
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY) ||
     (typeof window !== 'undefined' && localStorage.getItem('razorops_openai_api_key')) || 
     ''
   ).trim();
 
   const resolvedGeminiKey = (
+    (apiKey && !apiKey.startsWith('sk-') ? apiKey : null) ||
+    (openaiKey && !openaiKey.startsWith('sk-') ? openaiKey : null) ||
     (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) ||
-    ((!apiKey || apiKey.startsWith('sk-')) ? (typeof window !== 'undefined' && localStorage.getItem('razorops_gemini_api_key')) : apiKey || '') || 
+    (typeof window !== 'undefined' && localStorage.getItem('razorops_gemini_api_key')) || 
     ''
   ).trim();
 
@@ -105,62 +107,62 @@ Be concise, precise with currency figures (INR / ₹), and explain root causes, 
         }
       } else {
         const errData = await response.json().catch(() => ({}));
-        console.warn('OpenAI API returned error:', errData);
-        if (errData.error?.message) {
-          // If key is invalid or quota exceeded, inform user and seamlessly continue with grounded engine
-          console.error("OpenAI API Notice:", errData.error.message);
-        }
+        console.warn('OpenAI API returned non-200 code:', response.status, errData?.error?.message || errData);
+        // If quota is exhausted or key error, proceed smoothly to Gemini or Autonomous Engine
       }
     } catch (err) {
       console.warn("OpenAI API fetch error:", err.message);
     }
   }
 
-  // 2. LIVE GOOGLE GEMINI CALL (Gemini 1.5 Flash)
+  // 2. LIVE GOOGLE GEMINI CALL (Gemini 2.5 Flash / Flash Latest)
   if (resolvedGeminiKey && resolvedGeminiKey.length > 10 && !resolvedGeminiKey.startsWith('sk-')) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(resolvedGeminiKey)}`;
-      
-      const payload = {
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: `You are the RazorOps AI Settlement & Audit Copilot for Razorpay Track 4. You are an expert financial controller and treasury auditor.
+    const supportedGeminiModels = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'];
+    for (const model of supportedGeminiModels) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(resolvedGeminiKey)}`;
+        
+        const payload = {
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: `You are the RazorOps AI Settlement & Audit Copilot for Razorpay Track 4. You are an expert financial controller and treasury auditor.
 Answer the user's question accurately and helpfully, grounding your answers in this active financial data:
 
 ${contextSummary}
 
 User Inquiry: ${cleanQuery}`
-              }
-            ]
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 800
           }
-        ],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 800
-        }
-      };
+        };
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          return {
-            answer: text,
-            source: 'Gemini 1.5 Flash (Live Real LLM)'
-          };
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            return {
+              answer: text,
+              source: `Google Gemini (${model})`
+            };
+          }
         }
+      } catch (err) {
+        console.warn(`Gemini ${model} fetch note:`, err.message);
       }
-    } catch (err) {
-      console.warn("Gemini API note (falling back to autonomous engine):", err.message);
     }
   }
 

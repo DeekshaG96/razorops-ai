@@ -40,8 +40,9 @@ import {
   normalizeDisputes 
 } from './utils/csvParser';
 
-// Modular SaaS Views
-import Navigation from './components/Navigation';
+// Modular SaaS Views & Authentic Razorpay Layout
+import RazorpaySidebar from './components/RazorpaySidebar';
+import RazorpayTopbar from './components/RazorpayTopbar';
 import ReconciliationStudio from './components/ReconciliationStudio';
 import MasterLedgerView from './components/MasterLedgerView';
 import ExceptionsDesk from './components/ExceptionsDesk';
@@ -51,8 +52,9 @@ import HistoricalBatchesView from './components/HistoricalBatchesView';
 import SettingsHub from './components/SettingsHub';
 
 export default function App() {
-  // Navigation
+  // Navigation & Layout
   const [activeTab, setActiveTab] = useState('studio');
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Auth state
   const [user, setUser] = useState(null);
@@ -88,8 +90,8 @@ export default function App() {
   // Settings & Credentials
   const [razorpayKeyId, setRazorpayKeyId] = useState(() => localStorage.getItem('razorops_rzp_key_id') || '');
   const [razorpayKeySecret, setRazorpayKeySecret] = useState(() => localStorage.getItem('razorops_rzp_key_secret') || '');
-  const [openaiApiKey, setOpenaiApiKey] = useState(() => localStorage.getItem('razorops_openai_api_key') || '');
-  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('razorops_gemini_api_key') || '');
+  const [openaiApiKey, setOpenaiApiKey] = useState(() => localStorage.getItem('razorops_openai_api_key') || import.meta.env.VITE_OPENAI_API_KEY || '');
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('razorops_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '');
   const [mdrRates, setMdrRates] = useState(() => {
     try {
       const saved = localStorage.getItem('razorops_mdr_rates');
@@ -418,20 +420,32 @@ export default function App() {
     localStorage.setItem('razorops_mdr_rates', JSON.stringify(mdrRates));
   };
 
-  // Pre-load demo dataset on mount if none exists
+  // Pre-load demo dataset on mount if none exists & populate default env keys
   useEffect(() => {
     if (!dbData) {
       const demoData = generateSyntheticData();
       const result = controllerAgent.run(demoData);
       setDbData(result);
     }
+    if (!openaiApiKey && import.meta.env.VITE_OPENAI_API_KEY) {
+      setOpenaiApiKey(import.meta.env.VITE_OPENAI_API_KEY);
+    }
+    if (!geminiApiKey && import.meta.env.VITE_GEMINI_API_KEY) {
+      setGeminiApiKey(import.meta.env.VITE_GEMINI_API_KEY);
+    }
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-500 selection:text-white flex flex-col">
+    <div className="min-h-screen bg-[#070d1e] text-slate-100 font-sans flex antialiased selection:bg-blue-600 selection:text-white">
       
-      {/* SaaS Navigation */}
-      <Navigation
+      {/* Ambient background glows */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 left-1/4 w-[650px] h-[650px] bg-blue-600/[0.05] rounded-full blur-[140px]" />
+        <div className="absolute top-1/2 -right-40 w-[550px] h-[550px] bg-indigo-600/[0.04] rounded-full blur-[140px]" />
+      </div>
+
+      {/* Razorpay Left Sidebar */}
+      <RazorpaySidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         user={user}
@@ -439,139 +453,155 @@ export default function App() {
         onAuditorLogin={handleAuditorLogin}
         firestoreSynced={firestoreSynced}
         unresolvedCount={dbData?.metrics?.unresolvedCount || dbData?.exceptions?.length || 0}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
       />
 
-      {/* Main Workspace Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Main Workspace Column with Topbar */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative z-10">
         
-        {/* Auth Barrier Notice (if not logged in) */}
-        {!user && (
-          <div className="mb-6 bg-gradient-to-r from-blue-950/40 via-indigo-950/40 to-slate-900 border border-blue-500/30 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center space-x-3.5">
-              <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400">
-                <ShieldCheck className="w-6 h-6" />
+        {/* Razorpay Topbar */}
+        <RazorpayTopbar
+          activeTab={activeTab}
+          setMobileOpen={setMobileOpen}
+          onRunEngine={handleRunEngine}
+          isRunning={isRunning}
+          user={user}
+          onAuditorLogin={handleAuditorLogin}
+          unresolvedCount={dbData?.metrics?.unresolvedCount || dbData?.exceptions?.length || 0}
+        />
+
+        {/* Main Workspace Container */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          
+          {/* Sleek Evaluator Notice (if not logged in) */}
+          {!user && (
+            <div className="bg-slate-900/70 border border-blue-500/25 rounded-2xl px-5 py-3 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 backdrop-blur-md">
+              <div className="flex items-center space-x-3 text-xs">
+                <div className="p-1.5 rounded-xl bg-blue-500/15 text-blue-400 flex-shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-bold text-white tracking-tight mr-1.5">Evaluator Sandbox Session:</span>
+                  <span className="text-slate-400">Previewing Razorpay Track 4 Multi-Agent Pipeline with live execution privileges.</span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-white tracking-tight">Evaluator Sandbox Session Active</h3>
-                <p className="text-xs text-slate-400">
-                  You are previewing RazorOps AI with full multi-agent reconciliation privileges. Authenticate below to link live Cloud Firestore merchant accounts.
-                </p>
+
+              <div className="flex items-center space-x-2 w-full sm:w-auto flex-shrink-0">
+                <button
+                  onClick={handleAuditorLogin}
+                  className="w-full sm:w-auto px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 whitespace-nowrap transition-all ring-1 ring-white/10"
+                >
+                  1-Click Auditor Session
+                </button>
+                <button
+                  onClick={handleGoogleSignIn}
+                  className="w-full sm:w-auto px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors"
+                >
+                  Google Sign In
+                </button>
               </div>
             </div>
+          )}
 
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <button
-                onClick={handleAuditorLogin}
-                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 whitespace-nowrap"
-              >
-                1-Click Auditor Session
-              </button>
-              <button
-                onClick={handleGoogleSignIn}
-                className="w-full sm:w-auto px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold whitespace-nowrap"
-              >
-                Google Sign In
-              </button>
+          {/* Tab 1: Studio */}
+          {activeTab === 'studio' && (
+            <ReconciliationStudio
+              mode={ingestionMode}
+              setMode={setIngestionMode}
+              onRunEngine={handleRunEngine}
+              isRunning={isRunning}
+              metrics={dbData?.metrics}
+              simulatedLogs={simulatedLogs}
+              terminalEndRef={terminalEndRef}
+              uploadedFiles={uploadedFiles}
+              onFileUpload={handleFileUpload}
+              onRemoveFile={handleRemoveFile}
+              activeBatchId={activeBatchId}
+            />
+          )}
+
+          {/* Tab 2: Master Ledger */}
+          {activeTab === 'ledger' && (
+            <MasterLedgerView
+              reconciliationResults={dbData?.reconciliationResults || []}
+              metrics={dbData?.metrics || {}}
+            />
+          )}
+
+          {/* Tab 3: Exceptions Desk */}
+          {activeTab === 'exceptions' && (
+            <ExceptionsDesk
+              exceptions={dbData?.exceptions || []}
+              resolvedExceptionIds={resolvedExceptionIds}
+              onResolveException={handleResolveException}
+            />
+          )}
+
+          {/* Tab 4: Liquidity Forecast */}
+          {activeTab === 'forecast' && (
+            <LiquidityForecastView
+              projections={dbData?.projections || []}
+              metrics={dbData?.metrics || {}}
+            />
+          )}
+
+          {/* Tab 5: Copilot Chat */}
+          {activeTab === 'copilot' && (
+            <CopilotChatView
+              contextData={dbData}
+              openaiApiKey={openaiApiKey}
+              setOpenaiApiKey={setOpenaiApiKey}
+              geminiApiKey={geminiApiKey}
+              setGeminiApiKey={setGeminiApiKey}
+              chatMessages={chatMessages}
+              setChatMessages={setChatMessages}
+            />
+          )}
+
+          {/* Tab 6: Historical Batches */}
+          {activeTab === 'history' && (
+            <HistoricalBatchesView
+              historicalBatches={historicalBatches}
+              onLoadBatch={handleLoadBatch}
+              activeBatchId={activeBatchId}
+            />
+          )}
+
+          {/* Tab 7: Settings */}
+          {activeTab === 'settings' && (
+            <SettingsHub
+              razorpayKeyId={razorpayKeyId}
+              setRazorpayKeyId={setRazorpayKeyId}
+              razorpayKeySecret={razorpayKeySecret}
+              setRazorpayKeySecret={setRazorpayKeySecret}
+              openaiApiKey={openaiApiKey}
+              setOpenaiApiKey={setOpenaiApiKey}
+              geminiApiKey={geminiApiKey}
+              setGeminiApiKey={setGeminiApiKey}
+              mdrRates={mdrRates}
+              setMdrRates={setMdrRates}
+              onSaveSettings={handleSaveSettings}
+            />
+          )}
+
+        </main>
+
+        {/* Razorpay Minimalist Footer */}
+        <footer className="border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500 bg-[#070d1e]/80 mt-auto">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center space-x-2 text-[11px]">
+              <span className="font-bold text-slate-300">Razorpay OpsAI</span>
+              <span>•</span>
+              <span>Autonomous 3-Way Reconciliation & Liquidity Copilot</span>
+            </div>
+            <div className="text-[10.5px] text-slate-400">
+              Razorpay Hackathon Track 4 • Powered by Multi-Agent Architecture & Google Gemini 2.5 Flash
             </div>
           </div>
-        )}
+        </footer>
 
-        {/* Tab 1: Studio */}
-        {activeTab === 'studio' && (
-          <ReconciliationStudio
-            mode={ingestionMode}
-            setMode={setIngestionMode}
-            onRunEngine={handleRunEngine}
-            isRunning={isRunning}
-            metrics={dbData?.metrics}
-            simulatedLogs={simulatedLogs}
-            terminalEndRef={terminalEndRef}
-            uploadedFiles={uploadedFiles}
-            onFileUpload={handleFileUpload}
-            onRemoveFile={handleRemoveFile}
-            activeBatchId={activeBatchId}
-          />
-        )}
-
-        {/* Tab 2: Master Ledger */}
-        {activeTab === 'ledger' && (
-          <MasterLedgerView
-            reconciliationResults={dbData?.reconciliationResults || []}
-            metrics={dbData?.metrics || {}}
-          />
-        )}
-
-        {/* Tab 3: Exceptions Desk */}
-        {activeTab === 'exceptions' && (
-          <ExceptionsDesk
-            exceptions={dbData?.exceptions || []}
-            resolvedExceptionIds={resolvedExceptionIds}
-            onResolveException={handleResolveException}
-          />
-        )}
-
-        {/* Tab 4: Liquidity Forecast */}
-        {activeTab === 'forecast' && (
-          <LiquidityForecastView
-            projections={dbData?.projections || []}
-            metrics={dbData?.metrics || {}}
-          />
-        )}
-
-        {/* Tab 5: Copilot Chat */}
-        {activeTab === 'copilot' && (
-          <CopilotChatView
-            contextData={dbData}
-            openaiApiKey={openaiApiKey}
-            setOpenaiApiKey={setOpenaiApiKey}
-            geminiApiKey={geminiApiKey}
-            setGeminiApiKey={setGeminiApiKey}
-            chatMessages={chatMessages}
-            setChatMessages={setChatMessages}
-          />
-        )}
-
-        {/* Tab 6: Historical Batches */}
-        {activeTab === 'history' && (
-          <HistoricalBatchesView
-            historicalBatches={historicalBatches}
-            onLoadBatch={handleLoadBatch}
-            activeBatchId={activeBatchId}
-          />
-        )}
-
-        {/* Tab 7: Settings */}
-        {activeTab === 'settings' && (
-          <SettingsHub
-            razorpayKeyId={razorpayKeyId}
-            setRazorpayKeyId={setRazorpayKeyId}
-            razorpayKeySecret={razorpayKeySecret}
-            setRazorpayKeySecret={setRazorpayKeySecret}
-            openaiApiKey={openaiApiKey}
-            setOpenaiApiKey={setOpenaiApiKey}
-            geminiApiKey={geminiApiKey}
-            setGeminiApiKey={setGeminiApiKey}
-            mdrRates={mdrRates}
-            setMdrRates={setMdrRates}
-            onSaveSettings={handleSaveSettings}
-          />
-        )}
-
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-slate-950 border-t border-slate-900 py-6 mt-12 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-400">RazorOps AI</span>
-            <span>•</span>
-            <span>Razorpay Autonomous Reconciliation & Liquidity Copilot</span>
-          </div>
-          <div className="text-[11px] text-slate-500">
-            Certified Multi-Agent Compliance Engine • Built for Razorpay Hackathon Track 4
-          </div>
-        </div>
-      </footer>
+      </div>
 
     </div>
   );

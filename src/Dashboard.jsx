@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import reportData from './reconciliation_report.json';
 
 export default function RazorOpsDashboard() {
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    setData(reportData);
-  }, []);
+  const [data] = useState(reportData);
 
   if (!data) return <div className="p-8 text-gray-500">Loading RazorOps Engine...</div>;
 

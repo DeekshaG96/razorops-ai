@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
-  RotateCcw, 
   Activity, 
   MessageSquare, 
   AlertTriangle, 
@@ -96,22 +95,6 @@ export default function App() {
     }
   }, [chatMessages]);
 
-  // Auth State Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setAuthError('');
-        // Initialize Firestore Real-time listener
-        subscribeToFirestore();
-      } else {
-        setDbData(null);
-        setIsCompleted(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
   // Listen to Firestore real-time updates
   const subscribeToFirestore = () => {
     const docRef = doc(db, 'reconciliation_reports', 'latest_batch');
@@ -132,6 +115,22 @@ export default function App() {
     });
     return unsubscribe;
   };
+
+  // Auth State Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setAuthError('');
+        // Initialize Firestore Real-time listener
+        subscribeToFirestore();
+      } else {
+        setDbData(null);
+        setIsCompleted(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Auth Sign-In / Sign-Up handlers
   const handleAuthSubmit = async (e) => {

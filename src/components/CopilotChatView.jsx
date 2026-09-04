@@ -86,9 +86,9 @@ export default function CopilotChatView({
           <div>
             <div className="flex items-center space-x-2 mb-1">
               <h2 className="text-xl font-bold text-white tracking-tight">Settlement & Audit Copilot</h2>
-              <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center space-x-1">
+              <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
                 <Sparkles className="w-3 h-3" />
-                <span>{geminiApiKey ? 'Gemini 1.5 Flash (Live)' : 'RazorOps Neural Copilot'}</span>
+                <span>{geminiApiKey ? 'Gemini 1.5 Flash Connected' : 'Autonomous AI Copilot Online'}</span>
               </span>
             </div>
             <p className="text-xs text-slate-400">
@@ -96,18 +96,28 @@ export default function CopilotChatView({
             </p>
           </div>
 
-          <div className="text-xs text-slate-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
-            {geminiApiKey ? '⚡ API Key Active' : 'ℹ️ Using local engine (Enter Gemini API Key in Settings for live LLM)'}
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{geminiApiKey ? 'Gemini API Active' : 'AI Reasoning Active'}</span>
+            </span>
           </div>
         </div>
 
         {/* Prompt Suggestions */}
         <div className="mt-4 pt-4 border-t border-slate-800">
           <span className="text-[10px] uppercase font-bold text-slate-500 block mb-2">
-            Suggested Audit Inquiries
+            Suggested AI Inquiries
           </span>
           <div className="flex items-center flex-wrap gap-2">
-            {promptSuggestions.map((prompt, idx) => (
+            {[
+              "Lookup payment pay_1001",
+              "Why is ₹80,000 locked in dispute reserve?",
+              "Explain the timing cutoff delay on pay_99001122",
+              "Draft an escalation email to Razorpay Nodal Desk",
+              "How are MDR fees and 18% GST calculated?",
+              "What is our projected liquidity over next 7 days?"
+            ].map((prompt, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(prompt)}
